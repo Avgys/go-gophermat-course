@@ -10,6 +10,7 @@
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+*.log
 
 # Binaries
 cmd/gophermart/main
@@ -21,3 +22,10 @@ vendor/
 # IDEs directories
 .idea
 .vscode
+
+*.csv
+*.json
+
+/bin/
+payload.json.gz
+cmd/storage.json
