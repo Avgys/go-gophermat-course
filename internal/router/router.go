@@ -1,7 +1,7 @@
 package router
 
 import (
-	"avgys-gophermat/internal/handler"
+	"avgys-gophermat/internal/endpoints"
 	"avgys-gophermat/internal/middlewares"
 
 	"github.com/go-chi/chi/v5"
@@ -12,17 +12,22 @@ const textType = "text/plain"
 const xgzipType = "application/x-gzip"
 const jsonType = "application/json"
 
-func NewRouter(h *handler.Handlers) *chi.Mux {
+func NewRouter(h *endpoints.Endpoints) *chi.Mux {
 
 	r := chi.NewRouter()
-	setEndpoints(r, h)
-
-	return r
-}
-
-func setEndpoints(r *chi.Mux, h *handler.Handlers) {
 
 	r.Use(middleware.RealIP, middlewares.WithLogging, middlewares.WithCompression)
 
-	r.Get("/ping", h.Ping)
+	r.Route("/api/user", func(r chi.Router) {
+		r.Group(func(r chi.Router) {
+
+			r.Use(middleware.AllowContentType(jsonType))
+
+			r.Post("/register", h.Register)
+			r.Post("/login", h.Login)
+		})
+
+	})
+
+	return r
 }

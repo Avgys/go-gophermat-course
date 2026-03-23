@@ -15,7 +15,7 @@ type Config struct {
 }
 
 func GetConfig(args []string, traceLogger *zerolog.Logger) (*Config, error) {
-	cfg := getDefaultConfig()
+	cfg := &Config{}
 
 	err := parseFlags(cfg, args)
 
@@ -52,14 +52,4 @@ func parseFlags(cfg *Config, args []string) error {
 	fs.StringVar(&cfg.AccrualSystemAddr, "r", "", "accrual system address")
 
 	return fs.Parse(args)
-}
-
-func getDefaultConfig() *Config {
-	cfg := Config{}
-
-	cfg.AppAddr = "localhost:8080"
-	cfg.DBConnectionString = ""
-	cfg.AccrualSystemAddr = ""
-
-	return &cfg
 }

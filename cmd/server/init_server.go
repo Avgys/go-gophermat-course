@@ -2,9 +2,10 @@ package server
 
 import (
 	"avgys-gophermat/internal/config"
-	"avgys-gophermat/internal/handler"
+	"avgys-gophermat/internal/endpoints"
 	"avgys-gophermat/internal/repository"
 	"avgys-gophermat/internal/router"
+	"avgys-gophermat/internal/service/auth"
 	"context"
 	"fmt"
 	"net/http"
@@ -37,17 +38,19 @@ func GetServer(done context.Context, traceLogger *zerolog.Logger) (*http.Server,
 	return srv, nil
 }
 
-func prepareDI(done context.Context, cfg *config.Config, traceLogger *zerolog.Logger) (*handler.Handlers, error) {
+func prepareDI(done context.Context, cfg *config.Config, traceLogger *zerolog.Logger) (*endpoints.Endpoints, error) {
 
-	store, err := repository.NewRepository(done, cfg, traceLogger)
+	store, err := repository.CreateRepository(done, cfg)
 
 	if err != nil {
 		err = fmt.Errorf("error initializing repository: %w", err)
 		return nil, err
 	}
 
+	authService := auth.NewAuthService(store)
+
 	// shortifier := service.NewShortifier(done, generator, store, &cfg.RedirectDomain)
-	h := handler.NewHandlers(store)
+	h := endpoints.New(authService)
 
 	return h, nil
 }

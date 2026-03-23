@@ -1,20 +1,18 @@
 package middlewares
 
 import (
-	"avgys-gophermat/internal/auth/jwttoken"
 	"net/http"
 
 	"avgys-gophermat/internal/logger"
+	"avgys-gophermat/internal/service/auth"
 )
-
-const authCookieName string = "AUTH_COOKIE"
 
 func RequireCookie(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		traceLogger := logger.Middleware(r.Context(), "RequireCookie")
 
-		authCookie, err := r.Cookie(string(authCookieName))
+		authCookie, err := r.Cookie(string(auth.CookieName))
 
 		if err == http.ErrNoCookie || authCookie == nil || authCookie.Value == "" {
 
@@ -26,7 +24,7 @@ func RequireCookie(h http.Handler) http.Handler {
 			return
 		}
 
-		claims, err := jwttoken.ParseToken(authCookie.Value)
+		claims, err := auth.ParseToken(authCookie.Value)
 
 		if err != nil || claims == nil || claims.UserID == 0 {
 
@@ -38,13 +36,10 @@ func RequireCookie(h http.Handler) http.Handler {
 			return
 		}
 
-		// refresh cookie expire time
-		newCookie := createCookie(authCookie.Value)
+		claims.InjectCookie(w)
 
 		authCtx := claims.WithContext(r.Context())
 		r = r.WithContext(authCtx)
-
-		http.SetCookie(w, newCookie)
 
 		h.ServeHTTP(w, r)
 	})
