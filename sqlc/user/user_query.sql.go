@@ -7,8 +7,6 @@ package userrepository
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createUser = `-- name: CreateUser :one
@@ -31,22 +29,16 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (int64, 
 }
 
 const getUserByLogin = `-- name: GetUserByLogin :one
-SELECT login, hash_salt, password_hash, created_at 
+SELECT id, login, hash_salt, password_hash, created_at 
 FROM public.users
 where login = $1
 `
 
-type GetUserByLoginRow struct {
-	Login        string
-	HashSalt     string
-	PasswordHash string
-	CreatedAt    pgtype.Timestamp
-}
-
-func (q *Queries) GetUserByLogin(ctx context.Context, login string) (GetUserByLoginRow, error) {
+func (q *Queries) GetUserByLogin(ctx context.Context, login string) (User, error) {
 	row := q.db.QueryRow(ctx, getUserByLogin, login)
-	var i GetUserByLoginRow
+	var i User
 	err := row.Scan(
+		&i.ID,
 		&i.Login,
 		&i.HashSalt,
 		&i.PasswordHash,

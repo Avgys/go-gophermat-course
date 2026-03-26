@@ -9,7 +9,7 @@ func GetFromContext(ctx context.Context) (*TokenClaims, error) {
 	claims, ok := ctx.Value(claimsName).(*TokenClaims)
 
 	if !ok || claims == nil || claims.UserID == 0 {
-		return &TokenClaims{}, errors.New("wrong auth token")
+		return nil, errors.New("wrong auth token")
 	}
 
 	return claims, nil

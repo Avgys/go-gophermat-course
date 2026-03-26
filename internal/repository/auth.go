@@ -47,6 +47,7 @@ func (s *DBStore) GetUserByLogin(ctx context.Context, userLogin string) (*model.
 	}
 
 	return &model.UserModel{
+		ID:           user.ID,
 		Login:        user.Login,
 		HashSalt:     user.HashSalt,
 		PasswordHash: user.PasswordHash,

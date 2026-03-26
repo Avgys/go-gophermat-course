@@ -1,11 +1,15 @@
 package endpoints
 
-import "avgys-gophermat/internal/service/auth"
+import (
+	"avgys-gophermat/internal/service/auth"
+	"avgys-gophermat/internal/service/orders"
+)
 
 type Endpoints struct {
 	*auth.AuthService
+	*orders.OrderService
 }
 
-func New(authservice *auth.AuthService) *Endpoints {
-	return &Endpoints{AuthService: authservice}
+func New(authservice *auth.AuthService, orderService *orders.OrderService) *Endpoints {
+	return &Endpoints{AuthService: authservice, OrderService: orderService}
 }

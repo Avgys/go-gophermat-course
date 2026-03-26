@@ -27,6 +27,12 @@ func NewRouter(h *endpoints.Endpoints) *chi.Mux {
 			r.Post("/login", h.Login)
 		})
 
+		r.Route("/orders", func(r chi.Router) {
+			r.Use(middlewares.RequireCookie)
+
+			r.Post("/", h.LoadOrder)
+			r.Get("/", h.LoadOrder)
+		})
 	})
 
 	return r

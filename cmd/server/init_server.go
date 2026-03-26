@@ -5,7 +5,9 @@ import (
 	"avgys-gophermat/internal/endpoints"
 	"avgys-gophermat/internal/repository"
 	"avgys-gophermat/internal/router"
+	"avgys-gophermat/internal/service/accrualclient"
 	"avgys-gophermat/internal/service/auth"
+	"avgys-gophermat/internal/service/orders"
 	"context"
 	"fmt"
 	"net/http"
@@ -48,9 +50,11 @@ func prepareDI(done context.Context, cfg *config.Config, traceLogger *zerolog.Lo
 	}
 
 	authService := auth.NewAuthService(store)
+	accrualService := accrualclient.NewAccrualService(done, cfg)
+	orderService := orders.NewOrderService(store, accrualService)
 
 	// shortifier := service.NewShortifier(done, generator, store, &cfg.RedirectDomain)
-	h := endpoints.New(authService)
+	h := endpoints.New(authService, orderService)
 
 	return h, nil
 }
