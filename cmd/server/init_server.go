@@ -2,6 +2,7 @@ package server
 
 import (
 	"avgys-gophermat/internal/config"
+	"avgys-gophermat/internal/db"
 	"avgys-gophermat/internal/endpoints"
 	"avgys-gophermat/internal/repository"
 	"avgys-gophermat/internal/router"
@@ -42,18 +43,27 @@ func GetServer(done context.Context, traceLogger *zerolog.Logger) (*http.Server,
 
 func prepareDI(done context.Context, cfg *config.Config, traceLogger *zerolog.Logger) (*endpoints.Endpoints, error) {
 
-	store, err := repository.CreateRepository(done, cfg)
+	//Db
+	dbConnection, err := db.NewDB(done, &db.Config{ConnectionString: cfg.DBConnectionString})
+
+	if err != nil {
+		return nil, err
+	}
+
+	//Repos
+	authRepo := repository.NewAuthRepository(dbConnection)
+	orderRepo := repository.NewOrderRepository(dbConnection)
 
 	if err != nil {
 		err = fmt.Errorf("error initializing repository: %w", err)
 		return nil, err
 	}
 
-	authService := auth.NewAuthService(store)
+	// Services
+	authService := auth.NewAuthService(authRepo)
 	accrualService := accrualclient.NewAccrualService(done, cfg)
-	orderService := orders.NewOrderService(store, accrualService)
+	orderService := orders.NewOrderService(orderRepo, accrualService)
 
-	// shortifier := service.NewShortifier(done, generator, store, &cfg.RedirectDomain)
 	h := endpoints.New(authService, orderService)
 
 	return h, nil

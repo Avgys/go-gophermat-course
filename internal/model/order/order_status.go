@@ -1,21 +1,21 @@
-package model
+package order
 
 import "github.com/samber/lo"
 
 type OrderStatus int
 
 const (
-	New OrderStatus = iota
-	Processing
-	Invalid
-	Processed
+	StatusNew OrderStatus = iota
+	StatusProcessing
+	StatusInvalid
+	StatusProcessed
 )
 
 var statusName = map[OrderStatus]string{
-	New:        "NEW",
-	Processing: "PROCESSING",
-	Invalid:    "INVALID",
-	Processed:  "PROCESSED",
+	StatusNew:        "NEW",
+	StatusProcessing: "PROCESSING",
+	StatusInvalid:    "INVALID",
+	StatusProcessed:  "PROCESSED",
 }
 
 func (ss OrderStatus) String() string {
@@ -28,6 +28,6 @@ func (ss *OrderStatus) Parse(input string) {
 	if ok {
 		*ss = status
 	} else {
-		*ss = Invalid
+		*ss = StatusInvalid
 	}
 }

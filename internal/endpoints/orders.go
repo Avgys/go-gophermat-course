@@ -5,7 +5,6 @@ import (
 	"avgys-gophermat/internal/service/auth"
 	httphelper "avgys-gophermat/internal/shared/http"
 	"net/http"
-	"strconv"
 )
 
 func (e *Endpoints) LoadOrder(w http.ResponseWriter, r *http.Request) {
@@ -25,14 +24,9 @@ func (e *Endpoints) LoadOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	orderNum, err := strconv.Atoi(string(body))
+	orderNum := string(body)
 
-	if err != nil {
-		httphelper.WriteError(w, r, err, traceLogger)
-		return
-	}
-
-	_, err = e.OrderService.Load(ctx, userClaims, orderNum)
+	err = e.OrderService.Store(ctx, userClaims, orderNum)
 
 	if err != nil {
 		httphelper.WriteError(w, r, err, traceLogger)

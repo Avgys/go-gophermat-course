@@ -20,7 +20,7 @@ func RequireCookie(h http.Handler) http.Handler {
 				Str("Cookie", "No-Cookie").
 				Send()
 
-			w.WriteHeader(http.StatusNoContent)
+			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 

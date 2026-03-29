@@ -8,3 +8,11 @@ sql:
         package: "userrepository"
         out: "user"
         sql_package: "pgx/v5"
+  - engine: "postgresql"
+    queries: "./order/order_query.sql"
+    schema: "../migrations/sql/000002_create_order_table.up.sql"
+    gen:
+      go:
+        package: "orderrepository"
+        out: "order"
+        sql_package: "pgx/v5"
