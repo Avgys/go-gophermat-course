@@ -16,3 +16,11 @@ sql:
         package: "orderrepository"
         out: "order"
         sql_package: "pgx/v5"
+  - engine: "postgresql"
+    queries: "./balance/balance_query.sql"
+    schema: "../migrations/sql/000003_create_balance_table.up.sql"
+    gen:
+      go:
+        package: "balancerepository"
+        out: "balance"
+        sql_package: "pgx/v5"
