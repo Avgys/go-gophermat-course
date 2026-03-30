@@ -19,7 +19,11 @@ func WriteResponse(w http.ResponseWriter, resp []byte, code int) {
 	}
 }
 
-func WriteError(w http.ResponseWriter, r *http.Request, err error, tracelog *zerolog.Logger) {
+func HandleErr(w http.ResponseWriter, r *http.Request, err error, tracelog *zerolog.Logger) bool {
+
+	if err == nil {
+		return false
+	}
 
 	errorText := http.StatusText(http.StatusInternalServerError)
 	statusCode := http.StatusInternalServerError
@@ -36,6 +40,8 @@ func WriteError(w http.ResponseWriter, r *http.Request, err error, tracelog *zer
 	}
 
 	http.Error(w, errorText, statusCode)
+
+	return true
 }
 
 func logRequest(r *http.Request, err error, tracelog *zerolog.Logger) {

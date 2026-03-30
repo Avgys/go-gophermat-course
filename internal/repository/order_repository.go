@@ -25,11 +25,16 @@ func NewOrderRepository(db *db.DB) *OrderRepository {
 	return &OrderRepository{queries}
 }
 
-func (r *OrderRepository) Store(ctx context.Context, f *orderrepository.GetOrAddOrderParams) (orderrepository.GetOrAddOrderRow, error) {
+func (r *OrderRepository) Store(ctx context.Context, params *orderrepository.GetOrAddOrderParams) (orderrepository.GetOrAddOrderRow, error) {
 	ctxTimeout, cancel := context.WithTimeout(ctx, operationTimeout)
 	defer cancel()
 
-	userID, err := r.repository.GetOrAddOrder(ctxTimeout, *f)
+	return r.repository.GetOrAddOrder(ctxTimeout, *params)
+}
 
-	return userID, err
+func (r *OrderRepository) GetOrdersByUser(ctx context.Context, userID int64) ([]orderrepository.Order, error) {
+	ctxTimeout, cancel := context.WithTimeout(ctx, operationTimeout)
+	defer cancel()
+
+	return r.repository.GetOrdersByUser(ctxTimeout, userID)
 }

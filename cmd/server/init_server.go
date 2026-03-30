@@ -25,7 +25,7 @@ func GetServer(done context.Context, traceLogger *zerolog.Logger) (*http.Server,
 		return nil, err
 	}
 
-	h, err := prepareDI(done, cfg, traceLogger)
+	h, err := prepareDI(done, cfg)
 
 	if err != nil {
 		return nil, err
@@ -41,7 +41,7 @@ func GetServer(done context.Context, traceLogger *zerolog.Logger) (*http.Server,
 	return srv, nil
 }
 
-func prepareDI(done context.Context, cfg *config.Config, traceLogger *zerolog.Logger) (*endpoints.Endpoints, error) {
+func prepareDI(done context.Context, cfg *config.Config) (*endpoints.Endpoints, error) {
 
 	//Db
 	dbConnection, err := db.NewDB(done, &db.Config{ConnectionString: cfg.DBConnectionString})

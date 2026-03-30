@@ -15,6 +15,10 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/samber/lo"
 )
 
 type OrderService struct {
@@ -60,6 +64,35 @@ func (a *OrderService) Store(ctx context.Context, userClaims *auth.TokenClaims, 
 	}
 
 	return nil
+}
+
+func (a *OrderService) GetOrderByUserID(ctx context.Context, userClaims *auth.TokenClaims) ([]order.Order, error) {
+
+	userId := userClaims.UserID
+
+	rows, err := a.orderRepository.GetOrdersByUser(ctx, userId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	orders := lo.Map(rows, func(row orderrepository.Order, _ int) order.Order {
+
+		v, err := row.Accrual.Float64Value()
+
+		if err != nil || !v.Valid {
+			v = pgtype.Float8{Valid: true, Float64: 0}
+		}
+
+		return order.Order{
+			OrderNum:     row.OrderNum,
+			Status:       order.OrderStatus(row.Status).String(),
+			Accrual:      strconv.FormatFloat(v.Float64, 'f', 2, 64),
+			CreatedAtUTC: row.CreatedAt.Time.Format(time.RFC3339),
+		}
+	})
+
+	return orders, nil
 }
 
 func (a *OrderService) Send(ctx context.Context, userClaims *auth.TokenClaims, orderNum string) (*model.AccrualResponse, error) {

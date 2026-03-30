@@ -1,13 +1,8 @@
 package order
 
-import (
-	"time"
-)
-
 type Order struct {
-	Id           int64
-	OrderNum     int64
-	Status       OrderStatus
-	Accrual      int
-	CreatedAtUTC time.Time
+	OrderNum     int64  `json:"number"`
+	Status       string `json:"status"`
+	Accrual      string `json:"accrual"`
+	CreatedAtUTC string `json:"uploaded_at"`
 }

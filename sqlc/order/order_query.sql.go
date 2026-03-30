@@ -66,11 +66,11 @@ func (q *Queries) GetOrAddOrder(ctx context.Context, arg GetOrAddOrderParams) (G
 const getOrdersByUser = `-- name: GetOrdersByUser :many
 SELECT order_num, status, accrual, user_id, created_at
 	FROM orders
-	where user = $1
+	where user_id = $1
 `
 
-func (q *Queries) GetOrdersByUser(ctx context.Context, dollar_1 interface{}) ([]Order, error) {
-	rows, err := q.db.Query(ctx, getOrdersByUser, dollar_1)
+func (q *Queries) GetOrdersByUser(ctx context.Context, userID int64) ([]Order, error) {
+	rows, err := q.db.Query(ctx, getOrdersByUser, userID)
 	if err != nil {
 		return nil, err
 	}

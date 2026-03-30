@@ -19,7 +19,13 @@ var statusName = map[OrderStatus]string{
 }
 
 func (ss OrderStatus) String() string {
-	return statusName[ss]
+	name, ok := statusName[ss]
+
+	if !ok {
+		name = statusName[StatusInvalid]
+	}
+
+	return name
 }
 
 func (ss *OrderStatus) Parse(input string) {

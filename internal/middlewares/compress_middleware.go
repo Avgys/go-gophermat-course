@@ -17,7 +17,7 @@ func WithCompression(h http.Handler) http.Handler {
 		decodeReader, err := compress.NewCompressReader(r)
 
 		if err != nil {
-			httpShared.WriteError(w, r, err, traceLogger)
+			httpShared.HandleErr(w, r, err, traceLogger)
 			return
 		}
 
@@ -26,7 +26,7 @@ func WithCompression(h http.Handler) http.Handler {
 		encodeWriter, err := compress.NewCompressWriter(w, r)
 
 		if err != nil {
-			httpShared.WriteError(w, r, err, traceLogger)
+			httpShared.HandleErr(w, r, err, traceLogger)
 			return
 		}
 

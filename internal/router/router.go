@@ -31,7 +31,7 @@ func NewRouter(h *endpoints.Endpoints) *chi.Mux {
 			r.Use(middlewares.RequireCookie)
 
 			r.Post("/", h.LoadOrder)
-			r.Get("/", h.LoadOrder)
+			r.Get("/", h.GetOrdersByUserId)
 		})
 	})
 
