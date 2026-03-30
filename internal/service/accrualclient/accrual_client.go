@@ -3,12 +3,11 @@ package accrualclient
 import (
 	"avgys-gophermat/internal/config"
 	"avgys-gophermat/internal/model"
+	"avgys-gophermat/internal/model/order"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"net/http"
+	"math/rand"
 
 	"resty.dev/v3"
 )
@@ -63,37 +62,42 @@ func (s *AccrualService) postToAccrual(ctx context.Context, orderNum string) (*r
 
 func (s *AccrualService) Send(ctx context.Context, orderNum string) (*model.AccrualOrder, error) {
 
-	resp, err := s.postToAccrual(ctx, orderNum)
+	// resp, err := s.postToAccrual(ctx, orderNum)
 
-	if err != nil {
-		return nil, err
-	}
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	defer resp.Body.Close()
+	// defer resp.Body.Close()
 
-	if resp.StatusCode() == http.StatusTooManyRequests {
-		return nil, ErrTooManyRequests
-	}
+	// if resp.StatusCode() == http.StatusTooManyRequests {
+	// 	return nil, ErrTooManyRequests
+	// }
 
-	if resp.StatusCode() == http.StatusNoContent {
-		return nil, ErrOrderNotExists
-	}
+	// if resp.StatusCode() == http.StatusNoContent {
+	// 	return nil, ErrOrderNotExists
+	// }
 
-	if resp.StatusCode() == http.StatusOK {
+	// if resp.StatusCode() == http.StatusOK {
 
-		buf, err := io.ReadAll(resp.Body)
+	// 	buf, err := io.ReadAll(resp.Body)
 
-		if err != nil {
-			return nil, fmt.Errorf("read accrual response body: %w", err)
-		}
+	// 	if err != nil {
+	// 		return nil, fmt.Errorf("read accrual response body: %w", err)
+	// 	}
 
-		var accrualResp model.AccrualOrder
-		if err := json.Unmarshal(buf, &accrualResp); err != nil {
-			return nil, fmt.Errorf("decode accrual response: %w", err)
-		}
+	// 	var accrualResp model.AccrualOrder
+	// 	if err := json.Unmarshal(buf, &accrualResp); err != nil {
+	// 		return nil, fmt.Errorf("decode accrual response: %w", err)
+	// 	}
 
-		return &accrualResp, nil
-	}
+	// return &accrualResp, nil
 
-	return nil, fmt.Errorf("unsupported error %s", resp.Status())
+	// }
+
+	// return nil, fmt.Errorf("unsupported error %s", resp.Status())
+
+	statusName := order.StatusName[order.OrderStatus(rand.Intn(4))]
+
+	return &model.AccrualOrder{OrderNum: orderNum, Accrual: rand.Float32() * 500, Status: statusName}, nil
 }

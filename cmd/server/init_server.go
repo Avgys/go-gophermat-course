@@ -62,7 +62,7 @@ func prepareDI(done context.Context, cfg *config.Config, traceLogger *zerolog.Lo
 	orderService := orders.NewOrderService(orderRepo, accrualService)
 
 	//Background processors
-	processor.NewProcessor(done, orderService, accrualService, traceLogger)
+	processor.NewAcrrualProcessor(done, orderService, accrualService, traceLogger)
 
 	h := endpoints.New(authService, orderService)
 

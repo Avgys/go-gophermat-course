@@ -9,6 +9,8 @@ import (
 	"context"
 	"errors"
 	"strconv"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -21,7 +23,7 @@ type AccrualResult struct {
 	err      error
 }
 
-type Processor struct {
+type AcrrualProcessor struct {
 	workersLimit int
 	pool         *Pool
 
@@ -30,16 +32,25 @@ type Processor struct {
 	logger         *zerolog.Logger
 
 	currentlyProcessing []int64
+
+	mu sync.RWMutex
+
+	accrualPoolSleepTime atomic.Int64
 }
 
-func NewProcessor(done context.Context, orderService *orders.OrderService, accrualService *accrualclient.AccrualService, traceLogger *zerolog.Logger) *Processor {
-	p := &Processor{
+func NewAcrrualProcessor(done context.Context, orderService *orders.OrderService, accrualService *accrualclient.AccrualService, traceLogger *zerolog.Logger) *AcrrualProcessor {
+
+	log := traceLogger.With().Str("service_name", "job_pool").Logger()
+
+	p := &AcrrualProcessor{
 		workersLimit: 20,
 
 		orderService:   orderService,
 		accrualService: accrualService,
-		logger:         traceLogger,
+		logger:         &log,
 	}
+
+	p.accrualPoolSleepTime.Store(0)
 
 	p.pool = NewPool(p.workersLimit/4, p.workersLimit, p.workersLimit)
 
@@ -48,7 +59,7 @@ func NewProcessor(done context.Context, orderService *orders.OrderService, accru
 	return p
 }
 
-func (p *Processor) startScan(ctx context.Context) chan int64 {
+func (p *AcrrualProcessor) startScan(ctx context.Context) chan int64 {
 
 	resultCh := make(chan int64, p.workersLimit)
 
@@ -62,23 +73,37 @@ func (p *Processor) startScan(ctx context.Context) chan int64 {
 			case <-ctx.Done():
 				return nil
 			case <-t.C:
-				orders, err := p.orderService.GetOrderUnprocessedOrders(ctx, int32(p.workersLimit))
+
+				procCount := len(p.currentlyProcessing)
+				scanLimit := p.workersLimit - procCount
+
+				orders, err := p.orderService.GetOrderUnprocessedOrders(ctx, scanLimit)
 
 				if err != nil {
 					return err
 				}
 
+				p.mu.RLock()
+
 				newOrders := lo.Filter(orders, func(item orderrepository.Order, _ int) bool {
 					return !lo.Contains(p.currentlyProcessing, item.OrderNum)
 				})
 
+				p.mu.RUnlock()
+
 				p.MarkProcessing(newOrders)
 
-				for _, order := range newOrders {
+				sleepTime := p.GetSleepTime()
+
+				if sleepTime > 0 {
+					time.Sleep(sleepTime)
+				}
+
+				for _, order := range p.currentlyProcessing {
 					select {
 					case <-ctx.Done():
 						return nil
-					case resultCh <- order.OrderNum:
+					case resultCh <- order:
 					}
 				}
 			}
@@ -88,7 +113,7 @@ func (p *Processor) startScan(ctx context.Context) chan int64 {
 	return resultCh
 }
 
-func (p *Processor) InitPolling(done context.Context) {
+func (p *AcrrualProcessor) InitPolling(done context.Context) {
 	orderCh := p.startScan(done)
 
 	processedCh := p.startPolling(done, orderCh)
@@ -99,12 +124,9 @@ func (p *Processor) InitPolling(done context.Context) {
 	go p.pool.Run(done)
 }
 
-func (p *Processor) StoreResult(done context.Context, processedCh chan AccrualResult) {
+func (p *AcrrualProcessor) StoreResult(done context.Context, processedCh chan AccrualResult) {
 
 	go func() {
-		// const interval = time.Second * 10
-		// t := time.NewTicker(interval)
-		// defer t.Stop()
 
 		for {
 			select {
@@ -115,15 +137,19 @@ func (p *Processor) StoreResult(done context.Context, processedCh chan AccrualRe
 					if errors.Is(accrualRs.err, accrualclient.ErrOrderNotExists) {
 						storeAccrualResponse(done, p, &model.AccrualOrder{OrderNum: accrualRs.orderNum, Accrual: 0, Status: order.StatusName[order.StatusInvalid]})
 					}
-					//TODO resolve err
+
+					p.logger.Err(accrualRs.err)
+
 				} else if accrualRs.response != nil {
 					storeAccrualResponse(done, p, accrualRs.response)
 				}
-				// TODO resolve err
 
-				orderNum, _ := strconv.ParseInt(accrualRs.orderNum, 10, 64)
+				orderNum, err := strconv.ParseInt(accrualRs.orderNum, 10, 64)
 
-				// TODO resolve err
+				if err != nil {
+					p.logger.Err(accrualRs.err)
+					continue
+				}
 
 				p.UnmarkProcessing(orderNum)
 			}
@@ -131,7 +157,7 @@ func (p *Processor) StoreResult(done context.Context, processedCh chan AccrualRe
 	}()
 }
 
-func storeAccrualResponse(done context.Context, p *Processor, accrualRs *model.AccrualOrder) {
+func storeAccrualResponse(done context.Context, p *AcrrualProcessor, accrualRs *model.AccrualOrder) {
 	storeLimit := time.Second * 10
 	ctxTimeout, cancel := context.WithTimeout(done, storeLimit)
 
@@ -139,7 +165,7 @@ func storeAccrualResponse(done context.Context, p *Processor, accrualRs *model.A
 	cancel()
 }
 
-func (p *Processor) startPolling(done context.Context, orderCh chan int64) chan AccrualResult {
+func (p *AcrrualProcessor) startPolling(done context.Context, orderCh chan int64) chan AccrualResult {
 	resultCh := make(chan AccrualResult, p.workersLimit)
 
 	go func() error {
@@ -157,29 +183,42 @@ func (p *Processor) startPolling(done context.Context, orderCh chan int64) chan 
 	return resultCh
 }
 
-func (p *Processor) PollOrder(c context.Context, resultCh chan AccrualResult, orderNum int64) {
+func (p *AcrrualProcessor) PollOrder(c context.Context, resultCh chan AccrualResult, orderNum int64) {
 	orderNumStr := strconv.FormatInt(orderNum, 10)
 	response, err := p.accrualService.Send(c, orderNumStr)
 
 	if errors.Is(err, accrualclient.ErrTooManyRequests) {
-		//TODO Add blocker
+		const retryTimeLimit int64 = 60
+
+		p.accrualPoolSleepTime.Store(retryTimeLimit)
+		time.AfterFunc(time.Second*time.Duration(p.accrualPoolSleepTime.Load()), func() {
+			p.accrualPoolSleepTime.Store(0)
+		})
+
+		return
 	}
 
 	resultCh <- AccrualResult{orderNum: orderNumStr, response: response, err: err}
 }
 
-func (p *Processor) MarkProcessing(newOrders []orderrepository.Order) {
-	//TODO Add mux
+func (p *AcrrualProcessor) MarkProcessing(newOrders []orderrepository.Order) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
 	for _, newOrder := range newOrders {
 		p.currentlyProcessing = append(p.currentlyProcessing, newOrder.OrderNum)
 	}
 }
 
-func (p *Processor) UnmarkProcessing(processed ...int64) {
-	//TODO Add mux
+func (p *AcrrualProcessor) UnmarkProcessing(processed ...int64) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
 	p.currentlyProcessing = lo.Filter(p.currentlyProcessing, func(item int64, _ int) bool {
 		return !lo.Contains(processed, item)
 	})
+}
+
+func (p *AcrrualProcessor) GetSleepTime() time.Duration {
+	return time.Second * time.Duration(p.accrualPoolSleepTime.Load())
 }

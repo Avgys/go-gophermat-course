@@ -93,8 +93,12 @@ func (a *OrderService) GetOrderByUserID(ctx context.Context, userClaims *auth.To
 	return orders, nil
 }
 
-func (a *OrderService) GetOrderUnprocessedOrders(ctx context.Context, limit int32) ([]orderrepository.Order, error) {
-	return a.orderRepository.GetUnproccessedOrders(ctx, limit)
+func (a *OrderService) GetOrderUnprocessedOrders(ctx context.Context, limit int) ([]orderrepository.Order, error) {
+	if limit == 0 {
+		return []orderrepository.Order{}, nil
+	}
+
+	return a.orderRepository.GetUnproccessedOrders(ctx, int32(limit))
 }
 
 func LuhnNumVerify(num string) error {
