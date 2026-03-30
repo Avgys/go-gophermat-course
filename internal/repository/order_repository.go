@@ -38,3 +38,17 @@ func (r *OrderRepository) GetOrdersByUser(ctx context.Context, userID int64) ([]
 
 	return r.repository.GetOrdersByUser(ctxTimeout, userID)
 }
+
+func (r *OrderRepository) GetUnproccessedOrders(ctx context.Context, limit int32) ([]orderrepository.Order, error) {
+	ctxTimeout, cancel := context.WithTimeout(ctx, operationTimeout)
+	defer cancel()
+
+	return r.repository.GetUnproccessedOrders(ctxTimeout, limit)
+}
+
+func (r *OrderRepository) UpdateOrder(ctx context.Context, arg *orderrepository.UpdateOrderParams) error {
+	ctxTimeout, cancel := context.WithTimeout(ctx, operationTimeout)
+	defer cancel()
+
+	return r.repository.UpdateOrder(ctxTimeout, *arg)
+}

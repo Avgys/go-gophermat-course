@@ -9,9 +9,7 @@ import (
 	httphelper "avgys-gophermat/internal/shared/http"
 	orderrepository "avgys-gophermat/sqlc/order"
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -95,41 +93,8 @@ func (a *OrderService) GetOrderByUserID(ctx context.Context, userClaims *auth.To
 	return orders, nil
 }
 
-func (a *OrderService) Send(ctx context.Context, userClaims *auth.TokenClaims, orderNum string) (*model.AccrualResponse, error) {
-
-	if err := LuhnNumVerify(orderNum); err != nil {
-		return nil, httphelper.NewError("order number is invalid", http.StatusBadRequest)
-	}
-
-	resp, err := a.accrualService.PostToAccrual(ctx, orderNum)
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer resp.Body.Close()
-
-	if resp.StatusCode() == http.StatusNoContent {
-		return nil, httphelper.NewError("no order found", http.StatusNoContent)
-	}
-
-	if resp.StatusCode() == http.StatusOK {
-
-		buf, err := io.ReadAll(resp.Body)
-
-		if err != nil {
-			return nil, fmt.Errorf("read accrual response body: %w", err)
-		}
-
-		var accrualResp model.AccrualResponse
-		if err := json.Unmarshal(buf, &accrualResp); err != nil {
-			return nil, fmt.Errorf("decode accrual response: %w", err)
-		}
-
-		return &accrualResp, nil
-	}
-
-	return nil, fmt.Errorf("unsupported error %s", resp.Status())
+func (a *OrderService) GetOrderUnprocessedOrders(ctx context.Context, limit int32) ([]orderrepository.Order, error) {
+	return a.orderRepository.GetUnproccessedOrders(ctx, limit)
 }
 
 func LuhnNumVerify(num string) error {
@@ -158,4 +123,26 @@ func LuhnNumVerify(num string) error {
 	}
 
 	return nil
+}
+
+func (a *OrderService) UpdateStatus(ctx context.Context, accrualOrder *model.AccrualOrder) error {
+
+	orderNum64, err := strconv.ParseInt(accrualOrder.OrderNum, 10, 64)
+	if err != nil {
+		return err
+	}
+
+	var orderStatus order.OrderStatus
+	orderStatus.Parse(accrualOrder.Status)
+
+	n := pgtype.Numeric{}
+	_ = n.ScanScientific(strconv.FormatFloat(float64(accrualOrder.Accrual), 'f', -1, 64))
+
+	order := &orderrepository.UpdateOrderParams{
+		OrderNum: orderNum64,
+		Status:   int32(orderStatus),
+		Accrual:  n,
+	}
+
+	return a.orderRepository.UpdateOrder(ctx, order)
 }

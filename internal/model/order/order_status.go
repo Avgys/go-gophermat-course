@@ -11,7 +11,7 @@ const (
 	StatusProcessed
 )
 
-var statusName = map[OrderStatus]string{
+var StatusName = map[OrderStatus]string{
 	StatusNew:        "NEW",
 	StatusProcessing: "PROCESSING",
 	StatusInvalid:    "INVALID",
@@ -19,17 +19,17 @@ var statusName = map[OrderStatus]string{
 }
 
 func (ss OrderStatus) String() string {
-	name, ok := statusName[ss]
+	name, ok := StatusName[ss]
 
 	if !ok {
-		name = statusName[StatusInvalid]
+		name = StatusName[StatusInvalid]
 	}
 
 	return name
 }
 
 func (ss *OrderStatus) Parse(input string) {
-	status, ok := lo.FindKey(statusName, input)
+	status, ok := lo.FindKey(StatusName, input)
 
 	if ok {
 		*ss = status

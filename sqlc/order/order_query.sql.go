@@ -96,13 +96,23 @@ func (q *Queries) GetOrdersByUser(ctx context.Context, userID int64) ([]Order, e
 }
 
 const getUnproccessedOrders = `-- name: GetUnproccessedOrders :many
-SELECT order_num, status, accrual, user_id, created_at
+WITH picked AS (
+	SELECT order_num
 	FROM orders
-	where status IN (0, 1)
+	WHERE status IN (0, 1)
+	ORDER BY status DESC, created_at
+	LIMIT $1
+	FOR UPDATE SKIP LOCKED
+)
+UPDATE orders o
+SET status = 1
+FROM picked p
+WHERE o.order_num = p.order_num
+RETURNING o.order_num, o.status, o.accrual, o.user_id, o.created_at
 `
 
-func (q *Queries) GetUnproccessedOrders(ctx context.Context) ([]Order, error) {
-	rows, err := q.db.Query(ctx, getUnproccessedOrders)
+func (q *Queries) GetUnproccessedOrders(ctx context.Context, limit int32) ([]Order, error) {
+	rows, err := q.db.Query(ctx, getUnproccessedOrders, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -125,4 +135,21 @@ func (q *Queries) GetUnproccessedOrders(ctx context.Context) ([]Order, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateOrder = `-- name: UpdateOrder :exec
+UPDATE public.orders
+	SET status = $2, accrual = $3
+	WHERE order_num = $1
+`
+
+type UpdateOrderParams struct {
+	OrderNum int64
+	Status   int32
+	Accrual  pgtype.Numeric
+}
+
+func (q *Queries) UpdateOrder(ctx context.Context, arg UpdateOrderParams) error {
+	_, err := q.db.Exec(ctx, updateOrder, arg.OrderNum, arg.Status, arg.Accrual)
+	return err
 }
