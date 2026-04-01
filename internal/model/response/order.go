@@ -1,4 +1,4 @@
-package order
+package response
 
 type Order struct {
 	OrderNum     int64  `json:"number"`

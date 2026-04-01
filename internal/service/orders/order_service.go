@@ -3,7 +3,9 @@ package orders
 import (
 	"avgys-gophermat/internal/model"
 	"avgys-gophermat/internal/model/order"
+	"avgys-gophermat/internal/model/response"
 	"avgys-gophermat/internal/repository"
+	"avgys-gophermat/internal/service"
 	"avgys-gophermat/internal/service/accrualclient"
 	"avgys-gophermat/internal/service/auth"
 	httphelper "avgys-gophermat/internal/shared/http"
@@ -64,7 +66,7 @@ func (a *OrderService) Store(ctx context.Context, userClaims *auth.TokenClaims, 
 	return nil
 }
 
-func (a *OrderService) GetOrderByUserID(ctx context.Context, userClaims *auth.TokenClaims) ([]order.Order, error) {
+func (a *OrderService) GetOrderByUserID(ctx context.Context, userClaims *auth.TokenClaims) ([]response.Order, error) {
 
 	userId := userClaims.UserID
 
@@ -74,18 +76,12 @@ func (a *OrderService) GetOrderByUserID(ctx context.Context, userClaims *auth.To
 		return nil, err
 	}
 
-	orders := lo.Map(rows, func(row orderrepository.Order, _ int) order.Order {
+	orders := lo.Map(rows, func(row orderrepository.Order, _ int) response.Order {
 
-		v, err := row.Accrual.Float64Value()
-
-		if err != nil || !v.Valid {
-			v = pgtype.Float8{Valid: true, Float64: 0}
-		}
-
-		return order.Order{
+		return response.Order{
 			OrderNum:     row.OrderNum,
 			Status:       order.OrderStatus(row.Status).String(),
-			Accrual:      strconv.FormatFloat(v.Float64, 'f', 2, 64),
+			Accrual:      service.NumericToStr(row.Accrual),
 			CreatedAtUTC: row.CreatedAt.Time.Format(time.RFC3339),
 		}
 	})

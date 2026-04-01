@@ -4,7 +4,7 @@ SELECT order_num, withdraw_amount, user_id, created_at
 	where user_id = $1;
 
 -- name: GetBalance :one
-SELECT id, balance, user_id
+SELECT balance, withdrawn, user_id
 	FROM public.balance
 	where user_id = $1;
 
@@ -19,8 +19,8 @@ WITH updated AS (
 SELECT EXISTS (SELECT 1 FROM updated) AS decreased;
 
 -- name: CreateBalance :exec
-INSERT INTO public.balance(id, balance, user_id)
-	VALUES ($1, $2, $3);
+INSERT INTO public.balance(user_id)
+	VALUES ($1);
 
 -- name: InsertWithdrawal :exec
 INSERT INTO public.withdraw_history(order_num, withdraw_amount, user_id)

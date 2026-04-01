@@ -9,9 +9,10 @@ import (
 )
 
 type Balance struct {
-	ID      int64
-	Balance pgtype.Numeric
-	UserID  int64
+	ID        int64
+	Balance   pgtype.Numeric
+	Withdrawn pgtype.Numeric
+	UserID    int64
 }
 
 type WithdrawHistory struct {

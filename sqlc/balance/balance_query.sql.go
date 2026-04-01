@@ -12,31 +12,31 @@ import (
 )
 
 const createBalance = `-- name: CreateBalance :exec
-INSERT INTO public.balance(id, balance, user_id)
-	VALUES ($1, $2, $3)
+INSERT INTO public.balance(user_id)
+	VALUES ($1)
 `
 
-type CreateBalanceParams struct {
-	ID      int64
-	Balance pgtype.Numeric
-	UserID  int64
-}
-
-func (q *Queries) CreateBalance(ctx context.Context, arg CreateBalanceParams) error {
-	_, err := q.db.Exec(ctx, createBalance, arg.ID, arg.Balance, arg.UserID)
+func (q *Queries) CreateBalance(ctx context.Context, userID int64) error {
+	_, err := q.db.Exec(ctx, createBalance, userID)
 	return err
 }
 
 const getBalance = `-- name: GetBalance :one
-SELECT id, balance, user_id
+SELECT balance, withdrawn, user_id
 	FROM public.balance
 	where user_id = $1
 `
 
-func (q *Queries) GetBalance(ctx context.Context, userID int64) (Balance, error) {
+type GetBalanceRow struct {
+	Balance   pgtype.Numeric
+	Withdrawn pgtype.Numeric
+	UserID    int64
+}
+
+func (q *Queries) GetBalance(ctx context.Context, userID int64) (GetBalanceRow, error) {
 	row := q.db.QueryRow(ctx, getBalance, userID)
-	var i Balance
-	err := row.Scan(&i.ID, &i.Balance, &i.UserID)
+	var i GetBalanceRow
+	err := row.Scan(&i.Balance, &i.Withdrawn, &i.UserID)
 	return i, err
 }
 

@@ -9,6 +9,7 @@ import (
 	"avgys-gophermat/internal/router"
 	"avgys-gophermat/internal/service/accrualclient"
 	"avgys-gophermat/internal/service/auth"
+	"avgys-gophermat/internal/service/balance"
 	"avgys-gophermat/internal/service/orders"
 	"context"
 	"fmt"
@@ -55,16 +56,18 @@ func prepareDI(done context.Context, cfg *config.Config, traceLogger *zerolog.Lo
 	//Repos
 	authRepo := repository.NewAuthRepository(dbConnection)
 	orderRepo := repository.NewOrderRepository(dbConnection)
+	balanceRepo := repository.NewBalanceRepository(dbConnection)
 
 	// Services
 	authService := auth.NewAuthService(authRepo)
 	accrualService := accrualclient.NewAccrualService(done, cfg)
 	orderService := orders.NewOrderService(orderRepo, accrualService)
+	balanceService := balance.NewBalanceService(balanceRepo)
 
 	//Background processors
 	processor.NewAcrrualProcessor(done, orderService, accrualService, traceLogger)
 
-	h := endpoints.New(authService, orderService)
+	h := endpoints.New(authService, orderService, balanceService)
 
 	return h, nil
 }

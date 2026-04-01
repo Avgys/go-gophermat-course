@@ -21,7 +21,7 @@ func NewBalanceRepository(db *db.DB) *BalanceRepository {
 	return &BalanceRepository{db: db, repository: queries}
 }
 
-func (r *BalanceRepository) GetBalance(ctx context.Context, userID int64) (balancerepository.Balance, error) {
+func (r *BalanceRepository) GetBalance(ctx context.Context, userID int64) (balancerepository.GetBalanceRow, error) {
 	ctxTimeout, cancel := context.WithTimeout(ctx, operationTimeout)
 	defer cancel()
 
