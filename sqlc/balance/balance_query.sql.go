@@ -93,19 +93,3 @@ func (q *Queries) InsertWithdrawal(ctx context.Context, arg InsertWithdrawalPara
 	_, err := q.db.Exec(ctx, insertWithdrawal, arg.OrderNum, arg.WithdrawAmount, arg.UserID)
 	return err
 }
-
-const tryAddDelta = `-- name: TryAddDelta :one
-SELECT try_add_delta FROM public.try_add_delta($1, $2)
-`
-
-type TryAddDeltaParams struct {
-	PUserID int64
-	PDelta  pgtype.Numeric
-}
-
-func (q *Queries) TryAddDelta(ctx context.Context, arg TryAddDeltaParams) (interface{}, error) {
-	row := q.db.QueryRow(ctx, tryAddDelta, arg.PUserID, arg.PDelta)
-	var try_add_delta interface{}
-	err := row.Scan(&try_add_delta)
-	return try_add_delta, err
-}

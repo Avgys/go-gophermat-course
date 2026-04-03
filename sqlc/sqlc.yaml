@@ -20,7 +20,6 @@ sql:
     queries: "./balance/balance_query.sql"
     schema:
       - "../migrations/sql/000003_create_balance_table.up.sql"
-      - "./schema/functions_stub.sql"
     gen:
       go:
         package: "balancerepository"

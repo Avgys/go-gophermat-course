@@ -14,15 +14,15 @@ import (
 const getOrAddOrder = `-- name: GetOrAddOrder :one
 WITH inserted AS (
 	INSERT INTO public.orders(
-		order_num, status, accrual, user_id)
-		VALUES ($1, $2, $3, $4)
+		order_num, status, user_id)
+		VALUES ($1, $2, $3)
 	ON CONFLICT (order_num) DO NOTHING
-	RETURNING order_num, status, accrual, user_id, created_at
+	RETURNING order_num, status, user_id, created_at
 )
-SELECT order_num, status, accrual, user_id, created_at, true as is_new
+SELECT order_num, status, user_id, created_at, true as is_new
 FROM inserted
 UNION ALL
-SELECT order_num, status, accrual, user_id, created_at, false as is_new
+SELECT order_num, status, user_id, created_at, false as is_new
 FROM orders
 WHERE order_num = $1
   AND NOT EXISTS (SELECT 1 FROM inserted)
@@ -31,31 +31,23 @@ WHERE order_num = $1
 type GetOrAddOrderParams struct {
 	OrderNum int64
 	Status   int32
-	Accrual  pgtype.Numeric
 	UserID   int64
 }
 
 type GetOrAddOrderRow struct {
 	OrderNum  int64
 	Status    int32
-	Accrual   pgtype.Numeric
 	UserID    int64
 	CreatedAt pgtype.Timestamp
 	IsNew     bool
 }
 
 func (q *Queries) GetOrAddOrder(ctx context.Context, arg GetOrAddOrderParams) (GetOrAddOrderRow, error) {
-	row := q.db.QueryRow(ctx, getOrAddOrder,
-		arg.OrderNum,
-		arg.Status,
-		arg.Accrual,
-		arg.UserID,
-	)
+	row := q.db.QueryRow(ctx, getOrAddOrder, arg.OrderNum, arg.Status, arg.UserID)
 	var i GetOrAddOrderRow
 	err := row.Scan(
 		&i.OrderNum,
 		&i.Status,
-		&i.Accrual,
 		&i.UserID,
 		&i.CreatedAt,
 		&i.IsNew,
@@ -137,10 +129,11 @@ func (q *Queries) GetUnproccessedOrders(ctx context.Context, limit int32) ([]Ord
 	return items, nil
 }
 
-const updateOrder = `-- name: UpdateOrder :exec
+const updateOrder = `-- name: UpdateOrder :one
 UPDATE public.orders
 	SET status = $2, accrual = $3
 	WHERE order_num = $1
+	RETURNING order_num, status, accrual, user_id
 `
 
 type UpdateOrderParams struct {
@@ -149,7 +142,21 @@ type UpdateOrderParams struct {
 	Accrual  pgtype.Numeric
 }
 
-func (q *Queries) UpdateOrder(ctx context.Context, arg UpdateOrderParams) error {
-	_, err := q.db.Exec(ctx, updateOrder, arg.OrderNum, arg.Status, arg.Accrual)
-	return err
+type UpdateOrderRow struct {
+	OrderNum int64
+	Status   int32
+	Accrual  pgtype.Numeric
+	UserID   int64
+}
+
+func (q *Queries) UpdateOrder(ctx context.Context, arg UpdateOrderParams) (UpdateOrderRow, error) {
+	row := q.db.QueryRow(ctx, updateOrder, arg.OrderNum, arg.Status, arg.Accrual)
+	var i UpdateOrderRow
+	err := row.Scan(
+		&i.OrderNum,
+		&i.Status,
+		&i.Accrual,
+		&i.UserID,
+	)
+	return i, err
 }

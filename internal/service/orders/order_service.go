@@ -49,7 +49,7 @@ func (a *OrderService) Store(ctx context.Context, userClaims *auth.TokenClaims, 
 		UserID:   userId,
 	}
 
-	row, err := a.orderRepository.Store(ctx, order)
+	row, err := a.orderRepository.GetOrAddEmptyOrder(ctx, order)
 
 	if err != nil {
 		return err

@@ -22,20 +22,21 @@ SELECT order_num, status, accrual, user_id, created_at
 -- name: GetOrAddOrder :one
 WITH inserted AS (
 	INSERT INTO public.orders(
-		order_num, status, accrual, user_id)
-		VALUES ($1, $2, $3, $4)
+		order_num, status, user_id)
+		VALUES ($1, $2, $3)
 	ON CONFLICT (order_num) DO NOTHING
-	RETURNING order_num, status, accrual, user_id, created_at
+	RETURNING order_num, status, user_id, created_at
 )
-SELECT order_num, status, accrual, user_id, created_at, true as is_new
+SELECT order_num, status, user_id, created_at, true as is_new
 FROM inserted
 UNION ALL
-SELECT order_num, status, accrual, user_id, created_at, false as is_new
+SELECT order_num, status, user_id, created_at, false as is_new
 FROM orders
 WHERE order_num = $1
   AND NOT EXISTS (SELECT 1 FROM inserted);
 
--- name: UpdateOrder :exec
+-- name: UpdateOrder :one
 UPDATE public.orders
 	SET status = $2, accrual = $3
-	WHERE order_num = $1;
+	WHERE order_num = $1
+	RETURNING order_num, status, accrual, user_id;
