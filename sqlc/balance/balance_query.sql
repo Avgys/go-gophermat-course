@@ -4,19 +4,10 @@ SELECT order_num, withdraw_amount, user_id, created_at
 	where user_id = $1;
 
 -- name: GetBalance :one
-SELECT balance, withdrawn, user_id
+SELECT amount, withdrawn, user_id
 	FROM public.balance
 	where user_id = $1;
 
--- name: TryDecreaseBalance :one
-WITH updated AS (
-	UPDATE public.balance
-	SET balance = balance - $2
-	WHERE user_id = $1
-	  AND balance >= $2
-	RETURNING 1
-)
-SELECT EXISTS (SELECT 1 FROM updated) AS decreased;
 
 -- name: CreateBalance :exec
 INSERT INTO public.balance(user_id)

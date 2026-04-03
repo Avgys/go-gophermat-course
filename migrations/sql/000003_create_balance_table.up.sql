@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS balance (
     ID BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    balance decimal (12, 6) NOT NULL DEFAULT 0,
+    amount decimal (12, 6) NOT NULL DEFAULT 0,
     withdrawn decimal (12, 6) NOT NULL DEFAULT 0,
     user_id BIGINT NOT NULL UNIQUE,
     CONSTRAINT orders_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id)

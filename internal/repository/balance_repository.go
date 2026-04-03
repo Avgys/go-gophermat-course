@@ -4,10 +4,8 @@ import (
 	"avgys-gophermat/internal/db"
 	balancerepository "avgys-gophermat/sqlc/balance"
 	"context"
-	"strconv"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type BalanceRepository struct {
@@ -35,28 +33,41 @@ func (r *BalanceRepository) GetWithdrawals(ctx context.Context, userID int64) ([
 	return r.repository.GetWithdrawals(ctxTimeout, userID)
 }
 
-func (r *BalanceRepository) TryDecreaseBalance(ctx context.Context, userID int64, amount float32) (bool, error) {
+type TryAddDeltaRow struct {
+	Modified  bool
+	NewAmount float32
+	OldAmount float32
+}
+
+func (r *BalanceRepository) TryAddDelta(ctx context.Context, userID int64, amount float32) (*TryAddDeltaRow, error) {
 	ctxTimeout, cancel := context.WithTimeout(ctx, operationTimeout)
 	defer cancel()
 
 	tx, err := r.db.Pool.BeginTx(ctxTimeout, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
 	defer tx.Rollback(ctxTimeout)
 
-	n := pgtype.Numeric{}
-	_ = n.ScanScientific(strconv.FormatFloat(float64(amount), 'f', -1, 64))
+	// n := pgtype.Numeric{}
+	// _ = n.ScanScientific(strconv.FormatFloat(float64(amount), 'f', -1, 64))
 
-	result, err := r.repository.WithTx(tx).TryDecreaseBalance(ctxTimeout, balancerepository.TryDecreaseBalanceParams{UserID: userID, Balance: n})
-	if err != nil {
-		return false, err
+	const sql = "SELECT * FROM public.try_add_delta($1, $2);"
+	row := tx.QueryRow(ctxTimeout, sql, struct {
+		UserID int64
+		Amount float32
+	}{UserID: userID, Amount: amount})
+
+	var result TryAddDeltaRow
+
+	if err := row.Scan(&result.Modified, &result.NewAmount, &result.OldAmount); err != nil {
+		return nil, err
 	}
 
 	if err := tx.Commit(ctxTimeout); err != nil {
-		return false, err
+		return nil, err
 	}
 
-	return result, nil
+	return &result, nil
 }

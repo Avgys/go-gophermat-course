@@ -10,7 +10,7 @@ import (
 
 type Balance struct {
 	ID        int64
-	Balance   pgtype.Numeric
+	Amount    pgtype.Numeric
 	Withdrawn pgtype.Numeric
 	UserID    int64
 }

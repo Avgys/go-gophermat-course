@@ -31,5 +31,21 @@ func (b *BalanceService) GetBalanceByUserID(ctx context.Context, userClaims *aut
 		return nil, err
 	}
 
-	return &response.Balance{CurrentSum: service.NumericToStr(row.Balance), Withdrawn: service.NumericToStr(row.Withdrawn)}, nil
+	return &response.Balance{CurrentSum: service.NumericToStr(row.Amount), Withdrawn: service.NumericToStr(row.Withdrawn)}, nil
+}
+
+func (b *BalanceService) UpdateBalance(ctx context.Context, userClaims *auth.TokenClaims, amount float32) (*repository.TryAddDeltaRow, error) {
+
+	userID := userClaims.UserID
+
+	row, err := b.repository.TryAddDelta(ctx, userID, amount)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return &repository.TryAddDeltaRow{Modified: false}, nil
+		}
+		return nil, err
+	}
+
+	return row, nil
 }

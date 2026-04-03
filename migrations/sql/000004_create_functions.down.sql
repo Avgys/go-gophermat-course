@@ -1,0 +1,1 @@
+DROP FUNCTION public.try_add_delta

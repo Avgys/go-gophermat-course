@@ -22,13 +22,13 @@ func (q *Queries) CreateBalance(ctx context.Context, userID int64) error {
 }
 
 const getBalance = `-- name: GetBalance :one
-SELECT balance, withdrawn, user_id
+SELECT amount, withdrawn, user_id
 	FROM public.balance
 	where user_id = $1
 `
 
 type GetBalanceRow struct {
-	Balance   pgtype.Numeric
+	Amount    pgtype.Numeric
 	Withdrawn pgtype.Numeric
 	UserID    int64
 }
@@ -36,7 +36,7 @@ type GetBalanceRow struct {
 func (q *Queries) GetBalance(ctx context.Context, userID int64) (GetBalanceRow, error) {
 	row := q.db.QueryRow(ctx, getBalance, userID)
 	var i GetBalanceRow
-	err := row.Scan(&i.Balance, &i.Withdrawn, &i.UserID)
+	err := row.Scan(&i.Amount, &i.Withdrawn, &i.UserID)
 	return i, err
 }
 
@@ -94,25 +94,18 @@ func (q *Queries) InsertWithdrawal(ctx context.Context, arg InsertWithdrawalPara
 	return err
 }
 
-const tryDecreaseBalance = `-- name: TryDecreaseBalance :one
-WITH updated AS (
-	UPDATE public.balance
-	SET balance = balance - $2
-	WHERE user_id = $1
-	  AND balance >= $2
-	RETURNING 1
-)
-SELECT EXISTS (SELECT 1 FROM updated) AS decreased
+const tryAddDelta = `-- name: TryAddDelta :one
+SELECT try_add_delta FROM public.try_add_delta($1, $2)
 `
 
-type TryDecreaseBalanceParams struct {
-	UserID  int64
-	Balance pgtype.Numeric
+type TryAddDeltaParams struct {
+	PUserID int64
+	PDelta  pgtype.Numeric
 }
 
-func (q *Queries) TryDecreaseBalance(ctx context.Context, arg TryDecreaseBalanceParams) (bool, error) {
-	row := q.db.QueryRow(ctx, tryDecreaseBalance, arg.UserID, arg.Balance)
-	var decreased bool
-	err := row.Scan(&decreased)
-	return decreased, err
+func (q *Queries) TryAddDelta(ctx context.Context, arg TryAddDeltaParams) (interface{}, error) {
+	row := q.db.QueryRow(ctx, tryAddDelta, arg.PUserID, arg.PDelta)
+	var try_add_delta interface{}
+	err := row.Scan(&try_add_delta)
+	return try_add_delta, err
 }
