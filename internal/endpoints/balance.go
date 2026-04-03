@@ -2,6 +2,7 @@ package endpoints
 
 import (
 	"avgys-gophermat/internal/logger"
+	"avgys-gophermat/internal/model/requests"
 	"avgys-gophermat/internal/service/auth"
 	httphelper "avgys-gophermat/internal/shared/http"
 	"encoding/json"
@@ -18,6 +19,57 @@ func (e *Endpoints) GetBalanceByUserID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	orders, err := e.BalanceService.GetBalanceByUserID(ctx, userClaims)
+	if httphelper.HandleErr(w, r, err, traceLogger) {
+		return
+	}
+
+	body, err := json.Marshal(orders)
+	if httphelper.HandleErr(w, r, err, traceLogger) {
+		return
+	}
+
+	httphelper.WriteResponse(w, body, http.StatusOK)
+}
+
+func (e *Endpoints) Withdraw(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	traceLogger := logger.Endpoint(ctx, "Withdraw")
+
+	userClaims, err := auth.GetFromContext(ctx)
+	if httphelper.HandleErr(w, r, err, traceLogger) {
+		return
+	}
+
+	var withdraw requests.WithdrawRq
+
+	err = getJSONBody(r, &withdraw)
+	if httphelper.HandleErr(w, r, err, traceLogger) {
+		return
+	}
+
+	orders, err := e.BalanceService.Withdraw(ctx, userClaims, &withdraw)
+	if httphelper.HandleErr(w, r, err, traceLogger) {
+		return
+	}
+
+	body, err := json.Marshal(orders)
+	if httphelper.HandleErr(w, r, err, traceLogger) {
+		return
+	}
+
+	httphelper.WriteResponse(w, body, http.StatusOK)
+}
+
+func (e *Endpoints) GetWithdrawals(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	traceLogger := logger.Endpoint(ctx, "Withdraw")
+
+	userClaims, err := auth.GetFromContext(ctx)
+	if httphelper.HandleErr(w, r, err, traceLogger) {
+		return
+	}
+
+	orders, err := e.BalanceService.GetWithdrawals(ctx, userClaims)
 	if httphelper.HandleErr(w, r, err, traceLogger) {
 		return
 	}

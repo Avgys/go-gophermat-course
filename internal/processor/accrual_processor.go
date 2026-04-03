@@ -1,8 +1,8 @@
 package processor
 
 import (
-	"avgys-gophermat/internal/model"
 	"avgys-gophermat/internal/model/order"
+	"avgys-gophermat/internal/model/responses"
 	"avgys-gophermat/internal/service/accrualclient"
 	"avgys-gophermat/internal/service/orders"
 	orderrepository "avgys-gophermat/sqlc/order"
@@ -19,7 +19,7 @@ import (
 
 type AccrualResult struct {
 	orderNum string
-	response *model.AccrualOrder
+	response *responses.AccrualOrder
 	err      error
 }
 
@@ -135,7 +135,7 @@ func (p *AcrrualProcessor) StoreResult(done context.Context, processedCh chan Ac
 			case accrualRs := <-processedCh:
 				if accrualRs.err != nil {
 					if errors.Is(accrualRs.err, accrualclient.ErrOrderNotExists) {
-						storeAccrualResponse(done, p, &model.AccrualOrder{OrderNum: accrualRs.orderNum, Accrual: 0, Status: order.StatusName[order.StatusInvalid]})
+						storeAccrualResponse(done, p, &responses.AccrualOrder{OrderNum: accrualRs.orderNum, Accrual: 0, Status: order.StatusName[order.StatusInvalid]})
 					}
 
 					p.logger.Err(accrualRs.err)
@@ -157,11 +157,11 @@ func (p *AcrrualProcessor) StoreResult(done context.Context, processedCh chan Ac
 	}()
 }
 
-func storeAccrualResponse(done context.Context, p *AcrrualProcessor, accrualRs *model.AccrualOrder) {
+func storeAccrualResponse(done context.Context, p *AcrrualProcessor, accrualRs *responses.AccrualOrder) {
 	storeLimit := time.Second * 10
 	ctxTimeout, cancel := context.WithTimeout(done, storeLimit)
 
-	p.orderService.UpdateStatus(ctxTimeout, accrualRs)
+	p.orderService.UpdateOrderStatus(ctxTimeout, accrualRs)
 	cancel()
 }
 

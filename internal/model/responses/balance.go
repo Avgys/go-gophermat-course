@@ -1,4 +1,4 @@
-package response
+package responses
 
 type Balance struct {
 	CurrentSum string `json:"current"`

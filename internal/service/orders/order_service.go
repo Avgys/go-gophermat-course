@@ -1,20 +1,19 @@
 package orders
 
 import (
-	"avgys-gophermat/internal/model"
 	"avgys-gophermat/internal/model/order"
-	"avgys-gophermat/internal/model/response"
+	"avgys-gophermat/internal/model/responses"
 	"avgys-gophermat/internal/repository"
 	"avgys-gophermat/internal/service"
 	"avgys-gophermat/internal/service/accrualclient"
 	"avgys-gophermat/internal/service/auth"
+	"avgys-gophermat/internal/service/validation"
 	httphelper "avgys-gophermat/internal/shared/http"
 	orderrepository "avgys-gophermat/sqlc/order"
 	"context"
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -34,7 +33,7 @@ func (a *OrderService) Store(ctx context.Context, userClaims *auth.TokenClaims, 
 
 	userId := userClaims.UserID
 
-	if err := LuhnNumVerify(orderNum); err != nil {
+	if err := validation.LuhnNumVerify(orderNum); err != nil {
 		return fmt.Errorf("%w inner %w", httphelper.NewError("order number is invalid", http.StatusUnprocessableEntity), err)
 	}
 
@@ -66,7 +65,7 @@ func (a *OrderService) Store(ctx context.Context, userClaims *auth.TokenClaims, 
 	return nil
 }
 
-func (a *OrderService) GetOrderByUserID(ctx context.Context, userClaims *auth.TokenClaims) ([]response.Order, error) {
+func (a *OrderService) GetOrderByUserID(ctx context.Context, userClaims *auth.TokenClaims) ([]responses.Order, error) {
 
 	userId := userClaims.UserID
 
@@ -76,9 +75,8 @@ func (a *OrderService) GetOrderByUserID(ctx context.Context, userClaims *auth.To
 		return nil, err
 	}
 
-	orders := lo.Map(rows, func(row orderrepository.Order, _ int) response.Order {
-
-		return response.Order{
+	orders := lo.Map(rows, func(row orderrepository.Order, _ int) responses.Order {
+		return responses.Order{
 			OrderNum:     row.OrderNum,
 			Status:       order.OrderStatus(row.Status).String(),
 			Accrual:      service.NumericToStr(row.Accrual),
@@ -97,35 +95,7 @@ func (a *OrderService) GetOrderUnprocessedOrders(ctx context.Context, limit int)
 	return a.orderRepository.GetUnproccessedOrders(ctx, int32(limit))
 }
 
-func LuhnNumVerify(num string) error {
-	digits := strings.Split(num, "")
-
-	mod := len(num) % 2
-	sum := 0
-
-	for i, f := range digits {
-
-		digit, err := strconv.Atoi(f)
-
-		if err != nil {
-			return err
-		}
-
-		if i%2 == mod {
-			sum += digit * 2 % 9
-		} else {
-			sum += digit
-		}
-	}
-
-	if sum%10 != 0 {
-		return fmt.Errorf("invalid code")
-	}
-
-	return nil
-}
-
-func (a *OrderService) UpdateStatus(ctx context.Context, accrualOrder *model.AccrualOrder) error {
+func (a *OrderService) UpdateOrderStatus(ctx context.Context, accrualOrder *responses.AccrualOrder) error {
 
 	orderNum64, err := strconv.ParseInt(accrualOrder.OrderNum, 10, 64)
 	if err != nil {
@@ -144,5 +114,5 @@ func (a *OrderService) UpdateStatus(ctx context.Context, accrualOrder *model.Acc
 		Accrual:  n,
 	}
 
-	return a.orderRepository.UpdateOrder(ctx, order)
+	return a.orderRepository.UpdateOrderAndIncreaseBalance(ctx, order)
 }

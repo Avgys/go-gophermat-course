@@ -51,7 +51,7 @@ func (r *OrderRepository) GetUnproccessedOrders(ctx context.Context, limit int32
 	return r.orderRepository.GetUnproccessedOrders(ctxTimeout, limit)
 }
 
-func (r *OrderRepository) UpdateOrder(ctx context.Context, arg *orderrepository.UpdateOrderParams) error {
+func (r *OrderRepository) UpdateOrderAndIncreaseBalance(ctx context.Context, arg *orderrepository.UpdateOrderParams) error {
 	ctxTimeout, cancel := context.WithTimeout(ctx, operationTimeout)
 	defer cancel()
 

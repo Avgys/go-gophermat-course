@@ -2,7 +2,7 @@ package endpoints
 
 import (
 	"avgys-gophermat/internal/logger"
-	"avgys-gophermat/internal/model"
+	"avgys-gophermat/internal/model/requests"
 	"avgys-gophermat/internal/service/auth"
 	httphelper "avgys-gophermat/internal/shared/http"
 	"errors"
@@ -14,7 +14,7 @@ func (e *Endpoints) Register(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	traceLogger := logger.Endpoint(ctx, "Register")
 
-	var user model.UserApi
+	var user requests.UserRq
 	err := getJSONBody(r, &user)
 	if httphelper.HandleErr(w, r, err, traceLogger) {
 		return
@@ -38,7 +38,7 @@ func (e *Endpoints) Login(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	traceLogger := logger.Endpoint(ctx, "Register")
 
-	var user model.UserApi
+	var user requests.UserRq
 
 	err := getJSONBody(r, &user)
 	if httphelper.HandleErr(w, r, err, traceLogger) {

@@ -38,6 +38,13 @@ func NewRouter(h *endpoints.Endpoints) *chi.Mux {
 			r.Use(middlewares.RequireCookie)
 
 			r.Get("/", h.GetBalanceByUserID)
+			r.With(middleware.AllowContentType(jsonType)).Post("/withdraw", h.Withdraw)
+		})
+
+		r.Route("/", func(r chi.Router) {
+			r.Use(middlewares.RequireCookie)
+
+			r.Get("/withdrawals", h.GetWithdrawals)
 		})
 	})
 

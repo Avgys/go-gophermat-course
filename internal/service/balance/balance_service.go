@@ -1,13 +1,23 @@
 package balance
 
 import (
-	"avgys-gophermat/internal/model/response"
+	"avgys-gophermat/internal/model/requests"
+	"avgys-gophermat/internal/model/responses"
 	"avgys-gophermat/internal/repository"
 	"avgys-gophermat/internal/service"
 	"avgys-gophermat/internal/service/auth"
+	"avgys-gophermat/internal/service/validation"
+	httphelper "avgys-gophermat/internal/shared/http"
+	balancerepository "avgys-gophermat/sqlc/balance"
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"net/http"
+	"strconv"
+	"time"
+
+	"github.com/samber/lo"
 )
 
 type BalanceService struct {
@@ -18,7 +28,7 @@ func NewBalanceService(resository *repository.BalanceRepository) *BalanceService
 	return &BalanceService{resository}
 }
 
-func (b *BalanceService) GetBalanceByUserID(ctx context.Context, userClaims *auth.TokenClaims) (*response.Balance, error) {
+func (b *BalanceService) GetBalanceByUserID(ctx context.Context, userClaims *auth.TokenClaims) (*responses.Balance, error) {
 
 	userID := userClaims.UserID
 
@@ -26,24 +36,65 @@ func (b *BalanceService) GetBalanceByUserID(ctx context.Context, userClaims *aut
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return &response.Balance{CurrentSum: "0", Withdrawn: "0"}, nil
+			return &responses.Balance{CurrentSum: "0", Withdrawn: "0"}, nil
 		}
 		return nil, err
 	}
 
-	return &response.Balance{CurrentSum: service.NumericToStr(row.Amount), Withdrawn: service.NumericToStr(row.Withdrawn)}, nil
+	return &responses.Balance{CurrentSum: service.NumericToStr(row.Amount), Withdrawn: service.NumericToStr(row.Withdrawn)}, nil
 }
 
-func (b *BalanceService) UpdateBalance(ctx context.Context, userClaims *auth.TokenClaims, amount float32) (*repository.TryAddDeltaRow, error) {
+func (b *BalanceService) GetWithdrawals(ctx context.Context, userClaims *auth.TokenClaims) ([]responses.WithdrawRs, error) {
 
 	userID := userClaims.UserID
 
-	row, err := b.repository.TryAddDelta(ctx, userID, amount)
+	rows, err := b.repository.GetWithdrawals(ctx, userID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	withdrawals := lo.Map(rows, func(row balancerepository.GetWithdrawalsRow, _ int) responses.WithdrawRs {
+		return responses.WithdrawRs{
+			OrderNum:    row.OrderNum,
+			Sum:         service.NumericToStr(row.WithdrawAmount),
+			ProcessedAt: row.CreatedAt.Time.Format(time.RFC3339),
+		}
+	})
+
+	return withdrawals, nil
+}
+
+func (b *BalanceService) Withdraw(ctx context.Context, userClaims *auth.TokenClaims, withdraw *requests.WithdrawRq) (*repository.TryAddDeltaRow, error) {
+
+	if withdraw.Sum < 0 {
+		return nil, httphelper.NewError("withdraw amount must be more than 0", http.StatusBadRequest)
+	}
+
+	if err := validation.LuhnNumVerify(withdraw.Order); err != nil {
+		return nil, fmt.Errorf("%w inner %w", httphelper.NewError("order number is invalid", http.StatusUnprocessableEntity), err)
+	}
+
+	userID := userClaims.UserID
+
+	n, err := strconv.ParseInt(withdraw.Order, 10, 64)
+
+	if err != nil {
+		return nil, err
+	}
+
+	row, err := b.repository.Withdraw(ctx, userID, withdraw.Sum, n)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return &repository.TryAddDeltaRow{Modified: false}, nil
 		}
+
+		if errors.Is(err, repository.ErrInsufficientBalance) {
+			showErr := httphelper.NewError(err.Error(), http.StatusPaymentRequired)
+			return &repository.TryAddDeltaRow{Modified: false}, fmt.Errorf("%w: inner error %w", showErr, err)
+		}
+
 		return nil, err
 	}
 

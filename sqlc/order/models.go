@@ -14,4 +14,5 @@ type Order struct {
 	Accrual   pgtype.Numeric
 	UserID    int64
 	CreatedAt pgtype.Timestamp
+	UpdatedAt pgtype.Timestamp
 }

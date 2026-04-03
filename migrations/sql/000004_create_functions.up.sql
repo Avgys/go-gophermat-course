@@ -18,14 +18,18 @@ BEGIN
     FROM public.balance b
     WHERE b.user_id = p_user_id;
 
+    new_amount := old_amount;
+
     -- Try update
     IF old_amount + p_delta < 0 THEN
+        
+        
         RAISE EXCEPTION 'insufficient funds: balance % + delta % would be negative', old_amount, p_delta
             USING ERRCODE = '22003';
     END IF;
 
     UPDATE public.balance b
-    SET amount = b.amount + p_delta
+    SET amount = b.amount + p_delta, withdrawn = CASE WHEN p_delta < 0 THEN b.withdrawn - p_delta ELSE b.withdrawn END
     WHERE b.user_id = p_user_id
     RETURNING b.amount INTO new_amount;
 

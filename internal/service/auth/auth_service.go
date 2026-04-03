@@ -2,6 +2,7 @@ package auth
 
 import (
 	"avgys-gophermat/internal/model"
+	"avgys-gophermat/internal/model/requests"
 	"avgys-gophermat/internal/repository"
 	"avgys-gophermat/internal/service/generator"
 	"context"
@@ -22,7 +23,7 @@ var (
 	ErrUserAlreadyExists = errors.New("user already exists")
 )
 
-func (a *AuthService) Register(ctx context.Context, user *model.UserApi) (*TokenClaims, error) {
+func (a *AuthService) Register(ctx context.Context, user *requests.UserRq) (*TokenClaims, error) {
 
 	dbUser := model.UserModel{Login: user.Login}
 	var err error
@@ -46,7 +47,7 @@ func (a *AuthService) Register(ctx context.Context, user *model.UserApi) (*Token
 	return NewToken(userID, dbUser.Login), nil
 }
 
-func (a *AuthService) Login(ctx context.Context, user *model.UserApi) (*TokenClaims, error) {
+func (a *AuthService) Login(ctx context.Context, user *requests.UserRq) (*TokenClaims, error) {
 	dbUser, err := a.repository.GetUserByLogin(ctx, user.Login)
 
 	if err != nil {

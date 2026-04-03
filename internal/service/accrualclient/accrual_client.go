@@ -2,8 +2,8 @@ package accrualclient
 
 import (
 	"avgys-gophermat/internal/config"
-	"avgys-gophermat/internal/model"
 	"avgys-gophermat/internal/model/order"
+	"avgys-gophermat/internal/model/responses"
 	"context"
 	"errors"
 	"fmt"
@@ -60,7 +60,7 @@ func (s *AccrualService) postToAccrual(ctx context.Context, orderNum string) (*r
 		Get(url)
 }
 
-func (s *AccrualService) Send(ctx context.Context, orderNum string) (*model.AccrualOrder, error) {
+func (s *AccrualService) Send(ctx context.Context, orderNum string) (*responses.AccrualOrder, error) {
 
 	// resp, err := s.postToAccrual(ctx, orderNum)
 
@@ -99,7 +99,7 @@ func (s *AccrualService) Send(ctx context.Context, orderNum string) (*model.Accr
 
 	statusName := order.StatusName[order.OrderStatus(rand.Intn(4))]
 
-	result := &model.AccrualOrder{OrderNum: orderNum, Accrual: rand.Float32() * 500, Status: statusName}
+	result := &responses.AccrualOrder{OrderNum: orderNum, Accrual: rand.Float32() * 500, Status: statusName}
 
 	if result.Accrual < 0 {
 		return nil, errors.New("order accrual must be larger than zero")

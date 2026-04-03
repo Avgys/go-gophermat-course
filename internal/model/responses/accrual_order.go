@@ -1,4 +1,4 @@
-package model
+package responses
 
 type AccrualOrder struct {
 	OrderNum string  `json:"order"`

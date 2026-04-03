@@ -9,9 +9,3 @@ type UserModel struct {
 	PasswordHash string
 	CreatedAtUTC time.Time
 }
-
-type UserApi struct {
-	UserID   int32
-	Login    string
-	Password string
-}
