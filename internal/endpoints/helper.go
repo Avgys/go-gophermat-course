@@ -3,6 +3,7 @@ package endpoints
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 
 	shared "avgys-gophermat/internal/shared/http"
@@ -26,7 +27,7 @@ func getJSONBody(r *http.Request, value any) error {
 	if err != nil {
 		var syntaxErr *json.SyntaxError
 
-		if errors.As(err, &syntaxErr) {
+		if errors.Is(err, io.ErrUnexpectedEOF) || errors.As(err, &syntaxErr) {
 			err = shared.NewError(err.Error(), http.StatusBadRequest)
 		}
 	}
