@@ -51,5 +51,6 @@ func (e *Endpoints) GetOrdersByUserId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-type", "application/json")
 	httphelper.WriteResponse(w, body, http.StatusOK)
 }

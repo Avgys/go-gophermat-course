@@ -28,6 +28,7 @@ func (e *Endpoints) GetBalanceByUserID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-type", "application/json")
 	httphelper.WriteResponse(w, body, http.StatusOK)
 }
 
@@ -57,6 +58,7 @@ func (e *Endpoints) Withdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-type", "application/json")
 	httphelper.WriteResponse(w, body, http.StatusOK)
 }
 
@@ -79,5 +81,6 @@ func (e *Endpoints) GetWithdrawals(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-type", "application/json")
 	httphelper.WriteResponse(w, body, http.StatusOK)
 }
