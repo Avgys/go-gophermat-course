@@ -79,7 +79,7 @@ func (a *OrderService) GetOrderByUserID(ctx context.Context, userClaims *auth.To
 		return responses.Order{
 			OrderNum:     row.OrderNum,
 			Status:       order.OrderStatus(row.Status).String(),
-			Accrual:      service.NumericToStr(row.Accrual),
+			Accrual:      service.NumericToFloat(row.Accrual),
 			CreatedAtUTC: row.CreatedAt.Time.Format(time.RFC3339),
 		}
 	})
@@ -106,7 +106,7 @@ func (a *OrderService) UpdateOrderStatus(ctx context.Context, accrualOrder *resp
 	orderStatus.Parse(accrualOrder.Status)
 
 	n := pgtype.Numeric{}
-	_ = n.ScanScientific(strconv.FormatFloat(float64(accrualOrder.Accrual), 'f', -1, 64))
+	_ = n.ScanScientific(strconv.FormatFloat(accrualOrder.Accrual, 'f', -1, 64))
 
 	order := &orderrepository.UpdateOrderParams{
 		OrderNum: orderNum64,

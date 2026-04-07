@@ -36,12 +36,12 @@ func (b *BalanceService) GetBalanceByUserID(ctx context.Context, userClaims *aut
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return &responses.Balance{CurrentSum: "0", Withdrawn: "0"}, nil
+			return &responses.Balance{CurrentSum: 0, Withdrawn: 0}, nil
 		}
 		return nil, err
 	}
 
-	return &responses.Balance{CurrentSum: service.NumericToStr(row.Amount), Withdrawn: service.NumericToStr(row.Withdrawn)}, nil
+	return &responses.Balance{CurrentSum: service.NumericToFloat(row.Amount), Withdrawn: service.NumericToFloat(row.Withdrawn)}, nil
 }
 
 func (b *BalanceService) GetWithdrawals(ctx context.Context, userClaims *auth.TokenClaims) ([]responses.WithdrawRs, error) {
@@ -57,7 +57,7 @@ func (b *BalanceService) GetWithdrawals(ctx context.Context, userClaims *auth.To
 	withdrawals := lo.Map(rows, func(row balancerepository.GetWithdrawalsRow, _ int) responses.WithdrawRs {
 		return responses.WithdrawRs{
 			OrderNum:    row.OrderNum,
-			Sum:         service.NumericToStr(row.WithdrawAmount),
+			Sum:         service.NumericToFloat(row.WithdrawAmount),
 			ProcessedAt: row.CreatedAt.Time.Format(time.RFC3339),
 		}
 	})

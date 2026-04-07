@@ -103,7 +103,7 @@ func (s *AccrualService) Send(ctx context.Context, orderNum string) (*responses.
 
 	statusName := order.StatusName[order.OrderStatus(rand.Intn(4))]
 
-	result := &responses.AccrualOrder{OrderNum: orderNum, Accrual: rand.Float32() * 500, Status: statusName}
+	result := &responses.AccrualOrder{OrderNum: orderNum, Accrual: rand.Float64() * 500, Status: statusName}
 
 	if result.Accrual < 0 {
 		return nil, errors.New("order accrual must be larger than zero")

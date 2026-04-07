@@ -2,6 +2,6 @@ package responses
 
 type AccrualOrder struct {
 	OrderNum string  `json:"order"`
-	Accrual  float32 `json:"accrual"`
+	Accrual  float64 `json:"accrual"`
 	Status   string  `json:"status"`
 }
