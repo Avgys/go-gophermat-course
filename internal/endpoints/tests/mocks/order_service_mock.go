@@ -36,20 +36,6 @@ func (m *MockOrderService) EXPECT() *MockOrderServiceMockRecorder {
 	return m.recorder
 }
 
-// Store mocks base method.
-func (m *MockOrderService) Store(ctx context.Context, userClaims *auth.TokenClaims, orderNum string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Store", ctx, userClaims, orderNum)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Store indicates an expected call of Store.
-func (mr *MockOrderServiceMockRecorder) Store(ctx, userClaims, orderNum interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Store", reflect.TypeOf((*MockOrderService)(nil).Store), ctx, userClaims, orderNum)
-}
-
 // GetOrderByUserID mocks base method.
 func (m *MockOrderService) GetOrderByUserID(ctx context.Context, userClaims *auth.TokenClaims) ([]responses.Order, error) {
 	m.ctrl.T.Helper()
@@ -63,4 +49,18 @@ func (m *MockOrderService) GetOrderByUserID(ctx context.Context, userClaims *aut
 func (mr *MockOrderServiceMockRecorder) GetOrderByUserID(ctx, userClaims interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderByUserID", reflect.TypeOf((*MockOrderService)(nil).GetOrderByUserID), ctx, userClaims)
+}
+
+// Store mocks base method.
+func (m *MockOrderService) Store(ctx context.Context, userClaims *auth.TokenClaims, orderNum string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Store", ctx, userClaims, orderNum)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Store indicates an expected call of Store.
+func (mr *MockOrderServiceMockRecorder) Store(ctx, userClaims, orderNum interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Store", reflect.TypeOf((*MockOrderService)(nil).Store), ctx, userClaims, orderNum)
 }

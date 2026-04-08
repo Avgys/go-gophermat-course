@@ -46,6 +46,11 @@ func (e *Endpoints) GetOrdersByUserId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(orders) == 0 {
+		httphelper.WriteResponse(w, nil, http.StatusNoContent)
+		return
+	}
+
 	body, err := json.Marshal(orders)
 	if httphelper.HandleErr(w, r, err, traceLogger) {
 		return

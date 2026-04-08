@@ -4,10 +4,12 @@ import (
 	"avgys-gophermat/internal/endpoints"
 	"avgys-gophermat/internal/endpoints/tests/mocks"
 	"avgys-gophermat/internal/middlewares"
+	"avgys-gophermat/internal/model/responses"
 	"avgys-gophermat/internal/service/auth"
 	httphelper "avgys-gophermat/internal/shared/http"
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -40,6 +42,12 @@ func (s *ordersSuite) requestWithClaims(body []byte) *http.Request {
 	claims := auth.NewToken(1, "alice")
 	ctx := claims.WithContext(context.Background())
 	return httptest.NewRequest(http.MethodPost, "/api/user/orders", bytes.NewReader(body)).WithContext(ctx)
+}
+
+func (s *ordersSuite) requestWithClaimsGet() *http.Request {
+	claims := auth.NewToken(1, "alice")
+	ctx := claims.WithContext(context.Background())
+	return httptest.NewRequest(http.MethodGet, "/api/user/orders", nil).WithContext(ctx)
 }
 
 func (s *ordersSuite) TestLoadOrderOK() {
@@ -128,6 +136,67 @@ func (s *ordersSuite) TestLoadOrderInternalError() {
 func (s *ordersSuite) TestLoadOrderUnauthorized() {
 	h := middlewares.RequireCookie(http.HandlerFunc(s.newEndpoints().LoadOrder))
 	req := httptest.NewRequest(http.MethodPost, "/api/user/orders", bytes.NewReader([]byte("123")))
+	resp := httptest.NewRecorder()
+
+	h.ServeHTTP(resp, req)
+
+	s.Equal(http.StatusUnauthorized, resp.Code)
+}
+
+func (s *ordersSuite) TestGetOrdersOK() {
+	orders := []responses.Order{
+		{OrderNum: 9278923470, Status: "PROCESSED", Accrual: 500, CreatedAtUTC: "2020-12-10T15:15:45+03:00"},
+		{OrderNum: 12345678903, Status: "PROCESSING", Accrual: 0, CreatedAtUTC: "2020-12-10T15:12:01+03:00"},
+		{OrderNum: 346436439, Status: "INVALID", Accrual: 0, CreatedAtUTC: "2020-12-09T16:09:53+03:00"},
+	}
+
+	s.orderMock.EXPECT().
+		GetOrderByUserID(gomock.Any(), gomock.AssignableToTypeOf(&auth.TokenClaims{})).
+		Return(orders, nil)
+
+	req := s.requestWithClaimsGet()
+	resp := httptest.NewRecorder()
+
+	s.newEndpoints().GetOrdersByUserId(resp, req)
+
+	s.Equal(http.StatusOK, resp.Code)
+	s.Equal("application/json", resp.Header().Get("Content-type"))
+
+	var got []responses.Order
+	s.NoError(json.Unmarshal(resp.Body.Bytes(), &got))
+	s.Equal(orders, got)
+}
+
+func (s *ordersSuite) TestGetOrdersNoContent() {
+	s.orderMock.EXPECT().
+		GetOrderByUserID(gomock.Any(), gomock.AssignableToTypeOf(&auth.TokenClaims{})).
+		Return([]responses.Order{}, nil)
+
+	req := s.requestWithClaimsGet()
+	resp := httptest.NewRecorder()
+
+	s.newEndpoints().GetOrdersByUserId(resp, req)
+
+	s.Equal(http.StatusNoContent, resp.Code)
+	s.Empty(resp.Body.Bytes())
+}
+
+func (s *ordersSuite) TestGetOrdersInternalError() {
+	s.orderMock.EXPECT().
+		GetOrderByUserID(gomock.Any(), gomock.AssignableToTypeOf(&auth.TokenClaims{})).
+		Return(nil, errors.New("boom"))
+
+	req := s.requestWithClaimsGet()
+	resp := httptest.NewRecorder()
+
+	s.newEndpoints().GetOrdersByUserId(resp, req)
+
+	s.Equal(http.StatusInternalServerError, resp.Code)
+}
+
+func (s *ordersSuite) TestGetOrdersUnauthorized() {
+	h := middlewares.RequireCookie(http.HandlerFunc(s.newEndpoints().GetOrdersByUserId))
+	req := httptest.NewRequest(http.MethodGet, "/api/user/orders", nil)
 	resp := httptest.NewRecorder()
 
 	h.ServeHTTP(resp, req)

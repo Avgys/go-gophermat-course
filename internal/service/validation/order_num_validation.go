@@ -1,12 +1,18 @@
 package validation
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 )
 
 func LuhnNumVerify(num string) error {
+
+	if len(num) == 0 {
+		return errors.New("empty num")
+	}
+
 	digits := strings.Split(num, "")
 
 	mod := len(num) % 2
@@ -21,7 +27,14 @@ func LuhnNumVerify(num string) error {
 		}
 
 		if i%2 == mod {
-			sum += digit * 2 % 9
+			doubled := digit * 2
+
+			if doubled > 9 {
+				doubled -= 9
+			}
+
+			sum += doubled
+
 		} else {
 			sum += digit
 		}

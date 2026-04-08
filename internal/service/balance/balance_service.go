@@ -65,7 +65,7 @@ func (b *BalanceService) GetWithdrawals(ctx context.Context, userClaims *auth.To
 	return withdrawals, nil
 }
 
-func (b *BalanceService) Withdraw(ctx context.Context, userClaims *auth.TokenClaims, withdraw *requests.WithdrawRq) (*repository.TryAddDeltaRow, error) {
+func (b *BalanceService) Withdraw(ctx context.Context, userClaims *auth.TokenClaims, withdraw *requests.WithdrawRq) (*responses.WithdrawDeltaRs, error) {
 
 	if withdraw.Sum < 0 {
 		return nil, httphelper.NewError("withdraw amount must be more than 0", http.StatusBadRequest)
@@ -87,16 +87,16 @@ func (b *BalanceService) Withdraw(ctx context.Context, userClaims *auth.TokenCla
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return &repository.TryAddDeltaRow{Modified: false}, nil
+			return &responses.WithdrawDeltaRs{Modified: false}, nil
 		}
 
 		if errors.Is(err, repository.ErrInsufficientBalance) {
 			showErr := httphelper.NewError(err.Error(), http.StatusPaymentRequired)
-			return &repository.TryAddDeltaRow{Modified: false}, fmt.Errorf("%w: inner error %w", showErr, err)
+			return &responses.WithdrawDeltaRs{Modified: false}, fmt.Errorf("%w: inner error %w", showErr, err)
 		}
 
 		return nil, err
 	}
 
-	return row, nil
+	return &responses.WithdrawDeltaRs{Modified: row.Modified, NewAmount: row.NewAmount, OldAmount: row.OldAmount}, nil
 }
