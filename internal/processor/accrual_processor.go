@@ -4,7 +4,6 @@ import (
 	"avgys-gophermat/internal/model/order"
 	"avgys-gophermat/internal/model/responses"
 	"avgys-gophermat/internal/service/accrualclient"
-	"avgys-gophermat/internal/service/orders"
 	orderrepository "avgys-gophermat/sqlc/order"
 	"context"
 	"errors"
@@ -25,10 +24,10 @@ type AccrualResult struct {
 
 type AcrrualProcessor struct {
 	workersLimit int
-	pool         *Pool
+	pool         JobRunner
 
-	orderService   *orders.OrderService
-	accrualService *accrualclient.AccrualService
+	orderService   OrderService
+	accrualService accrualclient.AccrualClient
 	logger         *zerolog.Logger
 
 	currentlyProcessing []int64
@@ -38,7 +37,7 @@ type AcrrualProcessor struct {
 	accrualPoolSleepTime atomic.Int64
 }
 
-func NewAcrrualProcessor(done context.Context, orderService *orders.OrderService, accrualService *accrualclient.AccrualService, traceLogger *zerolog.Logger) *AcrrualProcessor {
+func NewAcrrualProcessor(done context.Context, orderService OrderService, accrualService accrualclient.AccrualClient, traceLogger *zerolog.Logger) *AcrrualProcessor {
 
 	log := traceLogger.With().Str("service_name", "job_pool").Logger()
 

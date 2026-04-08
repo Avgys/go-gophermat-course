@@ -3,7 +3,6 @@ package orders
 import (
 	"avgys-gophermat/internal/model/order"
 	"avgys-gophermat/internal/model/responses"
-	"avgys-gophermat/internal/repository"
 	"avgys-gophermat/internal/service"
 	"avgys-gophermat/internal/service/accrualclient"
 	"avgys-gophermat/internal/service/auth"
@@ -21,11 +20,11 @@ import (
 )
 
 type OrderService struct {
-	orderRepository *repository.OrderRepository
-	accrualService  *accrualclient.AccrualService
+	orderRepository OrderRepository
+	accrualService  accrualclient.AccrualClient
 }
 
-func NewOrderService(resository *repository.OrderRepository, accrualService *accrualclient.AccrualService) *OrderService {
+func NewOrderService(resository OrderRepository, accrualService accrualclient.AccrualClient) *OrderService {
 	return &OrderService{orderRepository: resository, accrualService: accrualService}
 }
 

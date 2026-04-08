@@ -21,10 +21,10 @@ import (
 )
 
 type BalanceService struct {
-	repository *repository.BalanceRepository
+	repository BalanceRepository
 }
 
-func NewBalanceService(resository *repository.BalanceRepository) *BalanceService {
+func NewBalanceService(resository BalanceRepository) *BalanceService {
 	return &BalanceService{resository}
 }
 
