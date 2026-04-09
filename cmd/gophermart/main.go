@@ -1,8 +1,8 @@
 package main
 
 import (
-	"avgys-gophermat/cmd/server"
 	"avgys-gophermat/internal/logger"
+	"avgys-gophermat/internal/server"
 	"context"
 	"errors"
 	"fmt"

@@ -31,7 +31,7 @@ func (e *Endpoints) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	token.InjectCookie(w)
-	httphelper.WriteResponse(w, nil, http.StatusOK)
+	httphelper.WriteResponse(w, nil, http.StatusOK, traceLogger)
 }
 
 func (e *Endpoints) Login(w http.ResponseWriter, r *http.Request) {
@@ -56,5 +56,5 @@ func (e *Endpoints) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	token.InjectCookie(w)
-	httphelper.WriteResponse(w, nil, http.StatusOK)
+	httphelper.WriteResponse(w, nil, http.StatusOK, traceLogger)
 }

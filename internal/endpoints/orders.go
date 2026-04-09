@@ -29,7 +29,7 @@ func (e *Endpoints) LoadOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httphelper.WriteResponse(w, nil, http.StatusOK)
+	httphelper.WriteResponse(w, nil, http.StatusOK, traceLogger)
 }
 
 func (e *Endpoints) GetOrdersByUserId(w http.ResponseWriter, r *http.Request) {
@@ -47,7 +47,7 @@ func (e *Endpoints) GetOrdersByUserId(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(orders) == 0 {
-		httphelper.WriteResponse(w, nil, http.StatusNoContent)
+		httphelper.WriteResponse(w, nil, http.StatusNoContent, traceLogger)
 		return
 	}
 
@@ -57,5 +57,5 @@ func (e *Endpoints) GetOrdersByUserId(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-type", "application/json")
-	httphelper.WriteResponse(w, body, http.StatusOK)
+	httphelper.WriteResponse(w, body, http.StatusOK, traceLogger)
 }
