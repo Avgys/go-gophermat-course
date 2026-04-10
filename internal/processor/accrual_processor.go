@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/rs/zerolog"
-	"github.com/samber/lo"
 )
 
 type AccrualResult struct {
@@ -30,7 +29,7 @@ type AcrrualProcessor struct {
 	accrualService accrualclient.AccrualClient
 	logger         *zerolog.Logger
 
-	currentlyProcessing []int64
+	currentlyProcessing map[int64]struct{}
 
 	mu sync.RWMutex
 
@@ -50,6 +49,7 @@ func NewAcrrualProcessor(done context.Context, orderService OrderService, accrua
 	}
 
 	p.accrualPoolSleepTime.Store(0)
+	p.currentlyProcessing = make(map[int64]struct{})
 
 	p.pool = NewPool(p.workersLimit/4, p.workersLimit, p.workersLimit)
 
@@ -85,9 +85,12 @@ func (p *AcrrualProcessor) startScan(ctx context.Context) chan int64 {
 
 				p.mu.RLock()
 
-				newOrders := lo.Filter(orders, func(item orderrepository.Order, _ int) bool {
-					return !lo.Contains(p.currentlyProcessing, item.OrderNum)
-				})
+				var newOrders []orderrepository.Order
+				for _, o := range orders {
+					if _, ok := p.currentlyProcessing[o.OrderNum]; !ok {
+						newOrders = append(newOrders, o)
+					}
+				}
 
 				p.mu.RUnlock()
 
@@ -99,7 +102,7 @@ func (p *AcrrualProcessor) startScan(ctx context.Context) chan int64 {
 					time.Sleep(sleepTime)
 				}
 
-				for _, order := range p.currentlyProcessing {
+				for order := range p.currentlyProcessing {
 					select {
 					case <-ctx.Done():
 						return nil
@@ -208,7 +211,7 @@ func (p *AcrrualProcessor) MarkProcessing(newOrders []orderrepository.Order) {
 	defer p.mu.Unlock()
 
 	for _, newOrder := range newOrders {
-		p.currentlyProcessing = append(p.currentlyProcessing, newOrder.OrderNum)
+		p.currentlyProcessing[newOrder.OrderNum] = struct{}{}
 	}
 }
 
@@ -216,9 +219,9 @@ func (p *AcrrualProcessor) UnmarkProcessing(processed ...int64) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	p.currentlyProcessing = lo.Filter(p.currentlyProcessing, func(item int64, _ int) bool {
-		return !lo.Contains(processed, item)
-	})
+	for _, id := range processed {
+		delete(p.currentlyProcessing, id)
+	}
 }
 
 func (p *AcrrualProcessor) GetSleepTime() time.Duration {

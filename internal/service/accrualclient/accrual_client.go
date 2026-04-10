@@ -2,14 +2,10 @@ package accrualclient
 
 import (
 	"avgys-gophermat/internal/config"
-	"avgys-gophermat/internal/model/order"
 	"avgys-gophermat/internal/model/responses"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"math/rand"
 	"net/http"
 	"strconv"
 
@@ -54,7 +50,8 @@ func NewAccrualService(ctx context.Context, cfg *config.Config) *AccrualService 
 	return service
 }
 
-func (s *AccrualService) postToAccrual(ctx context.Context, orderNum string) (*resty.Response, error) {
+func (s *AccrualService) Send(ctx context.Context, orderNum string, logger *zerolog.Logger) (*responses.AccrualOrder, error) {
+
 	if s == nil || s.restClient == nil {
 		return nil, fmt.Errorf("accrual service client is nil")
 	}
@@ -64,57 +61,42 @@ func (s *AccrualService) postToAccrual(ctx context.Context, orderNum string) (*r
 
 	url := fmt.Sprintf("http://%s/api/orders/%s", s.accrualSystemAddr, orderNum)
 
-	return s.restClient.R().
+	var accrualResp responses.AccrualOrder
+
+	logger.Debug().Str("order", orderNum).Str("url", url).Msg("sending request to accrual server")
+
+	resp, err := s.restClient.R().
 		SetContext(ctx).
+		SetResult(&accrualResp).
 		Get(url)
-}
-
-func (s *AccrualService) Send(ctx context.Context, orderNum string, logger *zerolog.Logger) (*responses.AccrualOrder, error) {
-
-	resp, err := s.postToAccrual(ctx, orderNum)
 
 	if err != nil {
+		logger.Error().Err(err).Str("order", orderNum).Msg("accrual request failed")
 		return nil, err
 	}
 
 	defer resp.Body.Close()
 
+	logger.Debug().Str("order", orderNum).Int("status", resp.StatusCode()).Msg("accrual server response")
+
 	if resp.StatusCode() == http.StatusTooManyRequests {
 		retryAfterSecs := resp.Header().Get("Retry-After")
 		secs, _ := strconv.ParseInt(retryAfterSecs, 10, 32)
+		logger.Warn().Str("order", orderNum).Int64("retry_after", secs).Msg("accrual server rate limited")
 		return nil, ErrRetryAfter{error: errors.New("too many requests"), RetryAfter: secs}
 	}
 
 	if resp.StatusCode() == http.StatusNoContent {
+		logger.Warn().Str("order", orderNum).Msg("order not found in accrual server")
 		return nil, ErrOrderNotExists
 	}
 
 	if resp.StatusCode() == http.StatusOK {
-
-		buf, err := io.ReadAll(resp.Body)
-
-		if err != nil {
-			return nil, fmt.Errorf("read accrual response body: %w", err)
-		}
-
-		var accrualResp responses.AccrualOrder
-		if err := json.Unmarshal(buf, &accrualResp); err != nil {
-			return nil, fmt.Errorf("decode accrual response: %w", err)
-		}
-
+		logger.Info().Str("order", orderNum).Str("status", accrualResp.Status).Float64("accrual", accrualResp.Accrual).Msg("accrual response received")
 		return &accrualResp, nil
-
 	}
 
-	return nil, fmt.Errorf("unsupported error %s", resp.Status())
-
-	statusName := order.StatusName[order.OrderStatus(rand.Intn(4))]
-
-	result := &responses.AccrualOrder{OrderNum: orderNum, Accrual: rand.Float64() * 500, Status: statusName}
-
-	if result.Accrual < 0 {
-		return nil, errors.New("order accrual must be larger than zero")
-	}
-
-	return result, nil
+	err = fmt.Errorf("unsupported error %s", resp.Status())
+	logger.Error().Err(err).Str("order", orderNum).Msg("unexpected accrual server response")
+	return nil, err
 }
