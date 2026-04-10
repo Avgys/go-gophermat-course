@@ -59,7 +59,7 @@ func (s *AccrualService) Send(ctx context.Context, orderNum string, logger *zero
 		return nil, fmt.Errorf("accrual system address is empty")
 	}
 
-	url := fmt.Sprintf("http://%s/api/orders/%s", s.accrualSystemAddr, orderNum)
+	url := fmt.Sprintf("%s/api/orders/%s", s.accrualSystemAddr, orderNum)
 
 	var accrualResp responses.AccrualOrder
 
