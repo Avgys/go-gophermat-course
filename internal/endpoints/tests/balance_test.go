@@ -182,7 +182,7 @@ func (s *balanceSuite) TestWithdrawUnauthorized() {
 
 func (s *balanceSuite) TestGetWithdrawalsOK() {
 	withdrawals := []responses.WithdrawRs{
-		{OrderNum: int64(2377225624), Sum: 500, ProcessedAt: "2020-12-09T16:09:57+03:00"},
+		{OrderNum: "2377225624", Sum: 500, ProcessedAt: "2020-12-09T16:09:57+03:00"},
 	}
 
 	s.balanceMock.EXPECT().

@@ -131,7 +131,7 @@ func (s *orderServiceSuite) TestGetOrderByUserID() {
 	s.NoError(err)
 
 	expected := []responses.Order{{
-		OrderNum:     9278923470,
+		OrderNum:     "9278923470",
 		Status:       order.StatusProcessed.String(),
 		Accrual:      service.NumericToFloat(accrual),
 		CreatedAtUTC: created.Format(time.RFC3339),

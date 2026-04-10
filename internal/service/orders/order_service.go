@@ -58,7 +58,7 @@ func (a *OrderService) Store(ctx context.Context, userClaims *auth.TokenClaims, 
 	}
 
 	if !row.IsNew {
-		return httphelper.NewError("order is already in processing", http.StatusAccepted)
+		return httphelper.NewError("order is already in processing", http.StatusOK)
 	}
 
 	return nil
@@ -76,7 +76,7 @@ func (a *OrderService) GetOrderByUserID(ctx context.Context, userClaims *auth.To
 
 	orders := lo.Map(rows, func(row orderrepository.Order, _ int) responses.Order {
 		return responses.Order{
-			OrderNum:     row.OrderNum,
+			OrderNum:     strconv.FormatInt(row.OrderNum, 10),
 			Status:       order.OrderStatus(row.Status).String(),
 			Accrual:      service.NumericToFloat(row.Accrual),
 			CreatedAtUTC: row.CreatedAt.Time.Format(time.RFC3339),

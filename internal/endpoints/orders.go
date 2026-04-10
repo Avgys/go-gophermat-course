@@ -29,7 +29,7 @@ func (e *Endpoints) LoadOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httphelper.WriteResponse(w, nil, http.StatusOK, traceLogger)
+	httphelper.WriteResponse(w, nil, http.StatusAccepted, traceLogger)
 }
 
 func (e *Endpoints) GetOrdersByUserId(w http.ResponseWriter, r *http.Request) {

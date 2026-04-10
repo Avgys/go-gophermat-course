@@ -145,9 +145,9 @@ func (s *ordersSuite) TestLoadOrderUnauthorized() {
 
 func (s *ordersSuite) TestGetOrdersOK() {
 	orders := []responses.Order{
-		{OrderNum: 9278923470, Status: "PROCESSED", Accrual: 500, CreatedAtUTC: "2020-12-10T15:15:45+03:00"},
-		{OrderNum: 12345678903, Status: "PROCESSING", Accrual: 0, CreatedAtUTC: "2020-12-10T15:12:01+03:00"},
-		{OrderNum: 346436439, Status: "INVALID", Accrual: 0, CreatedAtUTC: "2020-12-09T16:09:53+03:00"},
+		{OrderNum: "9278923470", Status: "PROCESSED", Accrual: 500, CreatedAtUTC: "2020-12-10T15:15:45+03:00"},
+		{OrderNum: "12345678903", Status: "PROCESSING", Accrual: 0, CreatedAtUTC: "2020-12-10T15:12:01+03:00"},
+		{OrderNum: "346436439", Status: "INVALID", Accrual: 0, CreatedAtUTC: "2020-12-09T16:09:53+03:00"},
 	}
 
 	s.orderMock.EXPECT().
