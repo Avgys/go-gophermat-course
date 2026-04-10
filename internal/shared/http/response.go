@@ -41,6 +41,7 @@ func HandleErr(w http.ResponseWriter, r *http.Request, err error, tracelog *zero
 		logRequest(r, err, tracelog)
 	}
 
+	tracelog.Info().Int("status code", statusCode).Str("response", errorText).Msg("write response")
 	http.Error(w, errorText, statusCode)
 
 	return true
