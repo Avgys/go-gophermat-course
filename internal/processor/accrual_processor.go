@@ -79,7 +79,8 @@ func (p *AcrrualProcessor) startScan(ctx context.Context) chan int64 {
 				orders, err := p.orderService.GetOrderUnprocessedOrders(ctx, scanLimit)
 
 				if err != nil {
-					return err
+					p.logger.Err(err)
+					continue
 				}
 
 				p.mu.RLock()
