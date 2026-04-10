@@ -184,15 +184,17 @@ func (p *AcrrualProcessor) startPolling(done context.Context, orderCh chan int64
 
 func (p *AcrrualProcessor) PollOrder(c context.Context, resultCh chan AccrualResult, orderNum int64) {
 	orderNumStr := strconv.FormatInt(orderNum, 10)
-	response, err := p.accrualService.Send(c, orderNumStr)
+	response, err := p.accrualService.Send(c, orderNumStr, p.logger)
+	var errRetryAfter accrualclient.ErrRetryAfter
+	if errors.As(err, &errRetryAfter) {
 
-	if errors.Is(err, accrualclient.ErrTooManyRequests) {
-		const retryTimeLimit int64 = 60
+		isSwapped := p.accrualPoolSleepTime.CompareAndSwap(0, errRetryAfter.RetryAfter)
 
-		p.accrualPoolSleepTime.Store(retryTimeLimit)
-		time.AfterFunc(time.Second*time.Duration(p.accrualPoolSleepTime.Load()), func() {
-			p.accrualPoolSleepTime.Store(0)
-		})
+		if isSwapped {
+			time.AfterFunc(time.Second*time.Duration(p.accrualPoolSleepTime.Load()), func() {
+				p.accrualPoolSleepTime.Store(0)
+			})
+		}
 
 		return
 	}

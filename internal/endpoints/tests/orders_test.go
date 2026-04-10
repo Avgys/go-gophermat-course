@@ -65,7 +65,7 @@ func (s *ordersSuite) TestLoadOrderOK() {
 
 	s.newEndpoints().LoadOrder(resp, req)
 
-	s.Equal(http.StatusOK, resp.Code)
+	s.Equal(http.StatusAccepted, resp.Code)
 }
 
 func (s *ordersSuite) TestLoadOrderBadBody() {

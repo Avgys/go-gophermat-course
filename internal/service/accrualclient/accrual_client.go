@@ -11,13 +11,19 @@ import (
 	"io"
 	"math/rand"
 	"net/http"
+	"strconv"
 
+	"github.com/rs/zerolog"
 	"resty.dev/v3"
 )
 
+type ErrRetryAfter struct {
+	error
+	RetryAfter int64
+}
+
 var (
-	ErrTooManyRequests = errors.New("too many requests")
-	ErrOrderNotExists  = errors.New("order not exists")
+	ErrOrderNotExists = errors.New("order not exists")
 )
 
 type AccrualService struct {
@@ -63,7 +69,7 @@ func (s *AccrualService) postToAccrual(ctx context.Context, orderNum string) (*r
 		Get(url)
 }
 
-func (s *AccrualService) Send(ctx context.Context, orderNum string) (*responses.AccrualOrder, error) {
+func (s *AccrualService) Send(ctx context.Context, orderNum string, logger *zerolog.Logger) (*responses.AccrualOrder, error) {
 
 	resp, err := s.postToAccrual(ctx, orderNum)
 
@@ -74,8 +80,9 @@ func (s *AccrualService) Send(ctx context.Context, orderNum string) (*responses.
 	defer resp.Body.Close()
 
 	if resp.StatusCode() == http.StatusTooManyRequests {
-		resp.Header().Get("Retry-After")
-		return nil, ErrTooManyRequests
+		retryAfterSecs := resp.Header().Get("Retry-After")
+		secs, _ := strconv.ParseInt(retryAfterSecs, 10, 32)
+		return nil, ErrRetryAfter{error: errors.New("too many requests"), RetryAfter: secs}
 	}
 
 	if resp.StatusCode() == http.StatusNoContent {
