@@ -99,7 +99,7 @@ func (s *balanceServiceSuite) TestGetWithdrawalsOK() {
 	got, err := s.svc.GetWithdrawals(context.Background(), claims)
 	s.NoError(err)
 	s.Require().Len(got, 1)
-	s.Equal(responses.WithdrawRs{OrderNum: 2377225624, Sum: service.NumericToFloat(amount), ProcessedAt: created.Format(time.RFC3339)}, got[0])
+	s.Equal(responses.WithdrawRs{OrderNum: "2377225624", Sum: service.NumericToFloat(amount), ProcessedAt: created.Format(time.RFC3339)}, got[0])
 }
 
 func (s *balanceServiceSuite) TestGetWithdrawalsError() {

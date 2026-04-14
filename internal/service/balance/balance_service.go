@@ -56,7 +56,7 @@ func (b *BalanceService) GetWithdrawals(ctx context.Context, userClaims *auth.To
 
 	withdrawals := lo.Map(rows, func(row balancerepository.GetWithdrawalsRow, _ int) responses.WithdrawRs {
 		return responses.WithdrawRs{
-			OrderNum:    row.OrderNum,
+			OrderNum:    strconv.FormatInt(row.OrderNum, 10),
 			Sum:         service.NumericToFloat(row.WithdrawAmount),
 			ProcessedAt: row.CreatedAt.Time.Format(time.RFC3339),
 		}

@@ -5,10 +5,14 @@ import (
 	"avgys-gophermat/internal/model/responses"
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/rs/zerolog"
 )
 
 func newTestService(t *testing.T, handler http.HandlerFunc) *AccrualService {
@@ -37,7 +41,8 @@ func TestAccrualSendOK(t *testing.T) {
 		_ = json.NewEncoder(w).Encode(respBody)
 	})
 
-	got, err := svc.Send(context.Background(), orderNum)
+	logger := zerolog.Nop()
+	got, err := svc.Send(context.Background(), orderNum, &logger)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -55,7 +60,8 @@ func TestAccrualSendNoContent(t *testing.T) {
 		w.WriteHeader(http.StatusNoContent)
 	})
 
-	got, err := svc.Send(context.Background(), orderNum)
+	logger := zerolog.Nop()
+	got, err := svc.Send(context.Background(), orderNum, &logger)
 	if err == nil || err != ErrOrderNotExists {
 		t.Fatalf("expected ErrOrderNotExists, got %v", err)
 	}
@@ -66,14 +72,18 @@ func TestAccrualSendNoContent(t *testing.T) {
 
 func TestAccrualSendTooManyRequests(t *testing.T) {
 	orderNum := "12345678903"
+	timeout := 1
 	svc := newTestService(t, func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Retry-After", "60")
+		w.Header().Set("Retry-After", strconv.Itoa(timeout))
 		w.WriteHeader(http.StatusTooManyRequests)
 		_, _ = w.Write([]byte("No more than N requests per minute allowed"))
 	})
 
-	got, err := svc.Send(context.Background(), orderNum)
-	if err == nil || err != ErrTooManyRequests {
+	logger := zerolog.Nop()
+	got, err := svc.Send(context.Background(), orderNum, &logger)
+	var errRetry ErrRetryAfter
+	errors.As(err, &errRetry)
+	if errRetry.RetryAfter != int64(timeout) {
 		t.Fatalf("expected ErrTooManyRequests, got %v", err)
 	}
 	if got != nil {
@@ -87,7 +97,8 @@ func TestAccrualSendServerError(t *testing.T) {
 		w.WriteHeader(http.StatusInternalServerError)
 	})
 
-	got, err := svc.Send(context.Background(), orderNum)
+	logger := zerolog.Nop()
+	got, err := svc.Send(context.Background(), orderNum, &logger)
 	if err == nil {
 		t.Fatalf("expected error, got nil")
 	}

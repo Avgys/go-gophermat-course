@@ -10,6 +10,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	zerolog "github.com/rs/zerolog"
 )
 
 // MockAccrualClient is a mock of AccrualClient interface.
@@ -36,16 +37,16 @@ func (m *MockAccrualClient) EXPECT() *MockAccrualClientMockRecorder {
 }
 
 // Send mocks base method.
-func (m *MockAccrualClient) Send(ctx context.Context, orderNum string) (*responses.AccrualOrder, error) {
+func (m *MockAccrualClient) Send(ctx context.Context, orderNum string, logger *zerolog.Logger) (*responses.AccrualOrder, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Send", ctx, orderNum)
+	ret := m.ctrl.Call(m, "Send", ctx, orderNum, logger)
 	ret0, _ := ret[0].(*responses.AccrualOrder)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Send indicates an expected call of Send.
-func (mr *MockAccrualClientMockRecorder) Send(ctx, orderNum interface{}) *gomock.Call {
+func (mr *MockAccrualClientMockRecorder) Send(ctx, orderNum, logger interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockAccrualClient)(nil).Send), ctx, orderNum)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockAccrualClient)(nil).Send), ctx, orderNum, logger)
 }

@@ -66,7 +66,7 @@ func (s *accrualProcessorSuite) TestStartPollingSuccess() {
 	expected := &responses.AccrualOrder{OrderNum: orderNumStr, Status: "PROCESSED", Accrual: 500}
 
 	s.accrualMock.EXPECT().
-		Send(gomock.Any(), orderNumStr).
+		Send(gomock.Any(), orderNumStr, gomock.Any()).
 		Return(expected, nil)
 
 	orderCh <- orderNum
@@ -76,7 +76,7 @@ func (s *accrualProcessorSuite) TestStartPollingSuccess() {
 		s.Equal(orderNumStr, result.orderNum)
 		s.Equal(expected, result.response)
 		s.NoError(result.err)
-	case <-time.After(2 * time.Second):
+	case <-time.After(10 * time.Second):
 		s.Fail("timeout waiting for accrual result")
 	}
 }
@@ -95,7 +95,7 @@ func (s *accrualProcessorSuite) TestInitPollingSuccess() {
 
 	expected := &responses.AccrualOrder{OrderNum: "123", Status: "PROCESSED", Accrual: 500}
 	s.accrualMock.EXPECT().
-		Send(gomock.Any(), "123").
+		Send(gomock.Any(), "123", gomock.Any()).
 		Return(expected, nil).
 		MinTimes(1)
 
@@ -112,7 +112,7 @@ func (s *accrualProcessorSuite) TestInitPollingSuccess() {
 	select {
 	case got := <-updatedCh:
 		s.Equal(expected, got)
-	case <-time.After(50 * time.Second):
+	case <-time.After(3 * time.Second):
 		s.Fail("timeout waiting for UpdateOrderStatus")
 	}
 }

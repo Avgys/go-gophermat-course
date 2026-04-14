@@ -11,8 +11,10 @@ import (
 
 const maxBody = 1 << 20
 
-func WriteResponse(w http.ResponseWriter, resp []byte, code int) {
+func WriteResponse(w http.ResponseWriter, resp []byte, code int, tracelog *zerolog.Logger) {
 	w.WriteHeader(code)
+
+	tracelog.Info().Int("status code", code).Str("response", string(resp)).Msg("write response")
 
 	if len(resp) > 0 {
 		w.Write(resp)
@@ -39,6 +41,7 @@ func HandleErr(w http.ResponseWriter, r *http.Request, err error, tracelog *zero
 		logRequest(r, err, tracelog)
 	}
 
+	tracelog.Info().Int("status code", statusCode).Str("response", errorText).Msg("write response")
 	http.Error(w, errorText, statusCode)
 
 	return true

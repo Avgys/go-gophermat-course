@@ -80,7 +80,7 @@ func (s *orderServiceSuite) TestStoreConflict() {
 	s.Equal(http.StatusConflict, httpErr.StatusCode)
 }
 
-func (s *orderServiceSuite) TestStoreAccepted() {
+func (s *orderServiceSuite) TestStoreOk() {
 	claims := auth.NewToken(7, "alice")
 	orderNum := "79927398713"
 
@@ -93,7 +93,7 @@ func (s *orderServiceSuite) TestStoreAccepted() {
 	s.Error(err)
 	var httpErr *httphelper.ShowHTTPError
 	s.Require().True(errors.As(err, &httpErr))
-	s.Equal(http.StatusAccepted, httpErr.StatusCode)
+	s.Equal(http.StatusOK, httpErr.StatusCode)
 }
 
 func (s *orderServiceSuite) TestStoreRepoError() {
@@ -131,7 +131,7 @@ func (s *orderServiceSuite) TestGetOrderByUserID() {
 	s.NoError(err)
 
 	expected := []responses.Order{{
-		OrderNum:     9278923470,
+		OrderNum:     "9278923470",
 		Status:       order.StatusProcessed.String(),
 		Accrual:      service.NumericToFloat(accrual),
 		CreatedAtUTC: created.Format(time.RFC3339),
