@@ -5,6 +5,7 @@ import (
 	"avgys-gophermat/internal/model/responses"
 	"avgys-gophermat/internal/service"
 	"avgys-gophermat/internal/service/auth"
+	"avgys-gophermat/internal/service/orders"
 	httphelper "avgys-gophermat/internal/shared/http"
 	orderrepository "avgys-gophermat/sqlc/order"
 	"context"
@@ -24,13 +25,13 @@ type orderServiceSuite struct {
 	suite.Suite
 	ctrl *gomock.Controller
 	repo *mocks.MockOrderRepository
-	svc  *OrderService
+	svc  *orders.OrderService
 }
 
 func (s *orderServiceSuite) SetupTest() {
 	s.ctrl = gomock.NewController(s.T())
 	s.repo = mocks.NewMockOrderRepository(s.ctrl)
-	s.svc = NewOrderService(s.repo, nil)
+	s.svc = orders.NewOrderService(s.repo, nil)
 }
 
 func (s *orderServiceSuite) TearDownTest() {

@@ -1,17 +1,3 @@
-# Uploads Shields-compatible badge JSON to a GitHub Gist (tests + Go coverage).
-#
-# Setup (once):
-# 1. Create an empty Gist: https://gist.github.com — copy its ID from the URL (last path segment).
-# 2. Create a Personal Access Token with the "gist" scope:
-#    https://github.com/settings/tokens
-# 3. In the repo: Settings → Secrets and variables → Actions → New repository secret:
-#    - GIST_TOKEN = the PAT
-#    - GIST_ID    = the Gist ID (32-char hex)
-#
-# Badges in README (replace OWNER, GIST_ID, REPO; optional ?ref=branch for ref-prefixed files):
-#   ![tests](https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2FOwner%2FGIST_ID%2Fraw%2FREPO-go-tests.json)
-#   ![coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2FOwner%2FGIST_ID%2Fraw%2FREPO-go-coverage.json)
-
 name: CI Badges
 
 on:

@@ -1,4 +1,4 @@
-package endpoint_tests
+package endpoints_test
 
 import (
 	"avgys-gophermat/internal/endpoints"
