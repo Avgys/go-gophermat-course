@@ -39,11 +39,12 @@ func (s *accrualProcessorSuite) TearDownTest() {
 
 func (s *accrualProcessorSuite) newProcessor() *AcrrualProcessor {
 	p := &AcrrualProcessor{
-		workersLimit:   1,
-		pool:           s.pool,
-		orderService:   s.orderMock,
-		accrualService: s.accrualMock,
-		logger:         s.logger,
+		workersLimit:        1,
+		pool:                s.pool,
+		orderService:        s.orderMock,
+		accrualService:      s.accrualMock,
+		logger:              s.logger,
+		currentlyProcessing: make(map[int64]struct{}),
 	}
 	p.accrualPoolSleepTime.Store(0)
 	return p

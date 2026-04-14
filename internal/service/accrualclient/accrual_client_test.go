@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/rs/zerolog"
@@ -21,10 +20,8 @@ func newTestService(t *testing.T, handler http.HandlerFunc) *AccrualService {
 	srv := httptest.NewServer(handler)
 	t.Cleanup(srv.Close)
 
-	addr := strings.TrimPrefix(srv.URL, "http://")
-	addr = strings.TrimPrefix(addr, "https://")
-
-	cfg := &config.Config{AccrualSystemAddr: addr}
+	// Base URL must include scheme (e.g. http://host:port); host:port alone is invalid for URL parsing.
+	cfg := &config.Config{AccrualSystemAddr: srv.URL}
 	return NewAccrualService(context.Background(), cfg)
 }
 

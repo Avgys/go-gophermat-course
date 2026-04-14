@@ -57,7 +57,7 @@ func (r *BalanceRepository) TryAddDelta(ctx context.Context, userID int64, amoun
 	}
 
 	defer func() {
-		if rbErr := tx.Rollback(ctxTimeout); rbErr != nil {
+		if rbErr := tx.Rollback(ctxTimeout); rbErr != nil && !errors.Is(rbErr, pgx.ErrTxClosed) {
 			err = errors.Join(err, rbErr)
 		}
 	}()
@@ -70,7 +70,7 @@ func (r *BalanceRepository) TryAddDelta(ctx context.Context, userID int64, amoun
 		return nil, err
 	}
 
-	if commitErr := tx.Commit(ctxTimeout); commitErr != nil {
+	if commitErr := tx.Commit(ctxTimeout); commitErr != nil && !errors.Is(commitErr, pgx.ErrTxClosed) {
 		return nil, commitErr
 	}
 
@@ -112,7 +112,7 @@ func (r *BalanceRepository) Withdraw(ctx context.Context, userID int64, amount f
 	}
 
 	defer func() {
-		if rbErr := tx.Rollback(ctxTimeout); rbErr != nil {
+		if rbErr := tx.Rollback(ctxTimeout); rbErr != nil && !errors.Is(rbErr, pgx.ErrTxClosed) {
 			err = errors.Join(err, rbErr)
 		}
 	}()
@@ -134,7 +134,7 @@ func (r *BalanceRepository) Withdraw(ctx context.Context, userID int64, amount f
 		return nil, err
 	}
 
-	if commitErr := tx.Commit(ctxTimeout); commitErr != nil {
+	if commitErr := tx.Commit(ctxTimeout); commitErr != nil && !errors.Is(commitErr, pgx.ErrTxClosed) {
 		return nil, commitErr
 	}
 

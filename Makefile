@@ -32,3 +32,6 @@ docker-local:
 docker-local-rebuild:
 	$(COMPOSE_LOCAL) build --no-cache gophermart accrual
 	$(COMPOSE_LOCAL) up -d
+
+tests:
+	go test ./...

@@ -62,7 +62,7 @@ func (r *OrderRepository) UpdateOrderAndIncreaseBalance(ctx context.Context, arg
 	}
 
 	defer func() {
-		if rbErr := tx.Rollback(ctx); rbErr != nil {
+		if rbErr := tx.Rollback(ctx); rbErr != nil && !errors.Is(rbErr, pgx.ErrTxClosed) {
 			err = errors.Join(err, rbErr)
 		}
 	}()
@@ -81,7 +81,7 @@ func (r *OrderRepository) UpdateOrderAndIncreaseBalance(ctx context.Context, arg
 		}
 	}
 
-	if commitErr := tx.Commit(ctxTimeout); commitErr != nil {
+	if commitErr := tx.Commit(ctxTimeout); commitErr != nil && !errors.Is(commitErr, pgx.ErrTxClosed) {
 		return commitErr
 	}
 
