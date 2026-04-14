@@ -17,16 +17,16 @@ type Config struct {
 func GetConfig(args []string, traceLogger *zerolog.Logger) (*Config, error) {
 	cfg := &Config{}
 
-	err := parseFlags(cfg, args)
-
-	if err != nil {
-		return nil, fmt.Errorf("error parsing flags for config, %w", err)
-	}
-
-	err = parseEnv(cfg)
+	err := parseEnv(cfg)
 
 	if err != nil {
 		return nil, fmt.Errorf("error parsing env variables for config, %w", err)
+	}
+
+	err = parseFlags(cfg, args)
+
+	if err != nil {
+		return nil, fmt.Errorf("error parsing flags for config, %w", err)
 	}
 
 	traceLogger.Info().
