@@ -1,0 +1,47 @@
+# Uploads Shields-compatible badge JSON to a GitHub Gist (tests + Go coverage).
+#
+# Setup (once):
+# 1. Create an empty Gist: https://gist.github.com — copy its ID from the URL (last path segment).
+# 2. Create a Personal Access Token with the "gist" scope:
+#    https://github.com/settings/tokens
+# 3. In the repo: Settings → Secrets and variables → Actions → New repository secret:
+#    - GIST_TOKEN = the PAT
+#    - GIST_ID    = the Gist ID (32-char hex)
+#
+# Badges in README (replace OWNER, GIST_ID, REPO; optional ?ref=branch for ref-prefixed files):
+#   ![tests](https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2FOwner%2FGIST_ID%2Fraw%2FREPO-go-tests.json)
+#   ![coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2FOwner%2FGIST_ID%2Fraw%2FREPO-go-coverage.json)
+
+name: CI Badges
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  badges:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      # Reports must live next to go.mod: verbose tests + coverage; append cover -func so the last % is global.
+      - name: Run tests with coverage
+        run: |
+          set -euo pipefail
+          go test ./... -v -coverprofile=coverage.out -covermode=atomic 2>&1 | tee test.out
+          go tool cover -func=coverage.out >> test.out
+
+      - name: CI Badges
+        uses: gaelgirodon/ci-badges-action@v1.9.0
+        with:
+          gist-id: ${{ secrets.GIST_ID }}
+          token: ${{ secrets.GIST_TOKEN }}
