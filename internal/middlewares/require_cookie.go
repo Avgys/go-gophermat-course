@@ -36,7 +36,11 @@ func RequireCookie(h http.Handler) http.Handler {
 			return
 		}
 
-		claims.InjectCookie(w)
+		if err := claims.InjectCookie(w); err != nil {
+			traceLogger.Err(err).Msg("inject auth cookie")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 
 		authCtx := claims.WithContext(r.Context())
 		r = r.WithContext(authCtx)

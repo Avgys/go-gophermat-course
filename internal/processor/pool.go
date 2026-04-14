@@ -3,6 +3,7 @@ package processor
 import (
 	"context"
 	"sync"
+	"time"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -46,12 +47,46 @@ func (p *Pool) Run(ctx context.Context) error {
 		p.startWorker(ctx)
 	}
 
-	//TODO add scaler
+	go p.scaleLoop(ctx)
 
 	<-ctx.Done()
 	p.stopAll()
 
 	return p.workers.Wait()
+}
+
+func (p *Pool) scaleLoop(ctx context.Context) {
+	ticker := time.NewTicker(200 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			p.maybeScale(ctx)
+		}
+	}
+}
+
+func (p *Pool) maybeScale(ctx context.Context) {
+	for {
+		p.mu.Lock()
+		qlen := len(p.inputCh)
+		n := len(p.stops)
+		scaleUp := qlen > p.upAt && n < p.max
+		scaleDown := qlen <= p.downAt && n > p.min
+		p.mu.Unlock()
+
+		switch {
+		case scaleUp:
+			p.startWorker(ctx)
+		case scaleDown:
+			p.removeWorker()
+		default:
+			return
+		}
+	}
 }
 
 func (p *Pool) startWorker(ctx context.Context) {
@@ -83,7 +118,7 @@ func (p *Pool) removeWorker() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	if len(p.stops) > p.min {
+	if len(p.stops) <= p.min {
 		return
 	}
 

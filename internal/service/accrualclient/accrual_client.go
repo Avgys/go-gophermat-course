@@ -75,7 +75,7 @@ func (s *AccrualService) Send(ctx context.Context, orderNum string, logger *zero
 		return nil, err
 	}
 
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	logger.Debug().Str("order", orderNum).Int("status", resp.StatusCode()).Msg("accrual server response")
 

@@ -8,8 +8,6 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-const textType = "text/plain"
-const xgzipType = "application/x-gzip"
 const jsonType = "application/json"
 
 func NewRouter(h *endpoints.Endpoints) *chi.Mux {

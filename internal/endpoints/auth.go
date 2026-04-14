@@ -30,7 +30,10 @@ func (e *Endpoints) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token.InjectCookie(w)
+	if err := token.InjectCookie(w); err != nil {
+		httphelper.HandleErr(w, r, err, traceLogger)
+		return
+	}
 	httphelper.WriteResponse(w, nil, http.StatusOK, traceLogger)
 }
 
@@ -55,6 +58,9 @@ func (e *Endpoints) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token.InjectCookie(w)
+	if err := token.InjectCookie(w); err != nil {
+		httphelper.HandleErr(w, r, err, traceLogger)
+		return
+	}
 	httphelper.WriteResponse(w, nil, http.StatusOK, traceLogger)
 }

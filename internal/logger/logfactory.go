@@ -18,7 +18,7 @@ func NewLogger() (*zerolog.Logger, func()) {
 		Timestamp().
 		Logger()
 
-	return &logger, func() { f.Close() }
+	return &logger, func() { _ = f.Close() }
 }
 
 func NewRequestLogger(ctx context.Context, spanID int64) (*zerolog.Logger, func()) {

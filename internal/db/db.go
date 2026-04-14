@@ -88,7 +88,7 @@ func runMigrations(ctx context.Context, cfg *Config) error {
 		return fmt.Errorf("couldn't open migrations, %w, current dir %s", err, dir)
 	}
 
-	if err := m.Up(); err != nil && !(errors.Is(err, migrate.ErrNoChange) || errors.Is(err, migrate.ErrNilVersion)) {
+	if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) && !errors.Is(err, migrate.ErrNilVersion) {
 		return fmt.Errorf("couldn't run migrations, %w", err)
 	}
 

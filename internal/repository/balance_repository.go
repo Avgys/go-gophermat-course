@@ -47,7 +47,7 @@ type TryAddDeltaRow struct {
 	OldAmount float32
 }
 
-func (r *BalanceRepository) TryAddDelta(ctx context.Context, userID int64, amount float32) (*TryAddDeltaRow, error) {
+func (r *BalanceRepository) TryAddDelta(ctx context.Context, userID int64, amount float32) (result *TryAddDeltaRow, err error) {
 	ctxTimeout, cancel := context.WithTimeout(ctx, operationTimeout)
 	defer cancel()
 
@@ -56,18 +56,22 @@ func (r *BalanceRepository) TryAddDelta(ctx context.Context, userID int64, amoun
 		return nil, err
 	}
 
-	defer tx.Rollback(ctxTimeout)
+	defer func() {
+		if rbErr := tx.Rollback(ctxTimeout); rbErr != nil {
+			err = errors.Join(err, rbErr)
+		}
+	}()
 
 	n := pgtype.Numeric{}
 	_ = n.ScanScientific(strconv.FormatFloat(float64(amount), 'f', -1, 64))
-	result, err := r.tryAddDeltaWithTx(ctx, tx, userID, n)
+	result, err = r.tryAddDeltaWithTx(ctx, tx, userID, n)
 
 	if err != nil {
 		return nil, err
 	}
 
-	if err := tx.Commit(ctxTimeout); err != nil {
-		return nil, err
+	if commitErr := tx.Commit(ctxTimeout); commitErr != nil {
+		return nil, commitErr
 	}
 
 	return result, nil
@@ -95,7 +99,7 @@ func (r *BalanceRepository) tryAddDeltaWithTx(ctx context.Context, tx pgx.Tx, us
 	return &result, nil
 }
 
-func (r *BalanceRepository) Withdraw(ctx context.Context, userID int64, amount float32, orderNum int64) (*TryAddDeltaRow, error) {
+func (r *BalanceRepository) Withdraw(ctx context.Context, userID int64, amount float32, orderNum int64) (result *TryAddDeltaRow, err error) {
 	ctxTimeout, cancel := context.WithTimeout(ctx, operationTimeout)
 	defer cancel()
 
@@ -107,11 +111,15 @@ func (r *BalanceRepository) Withdraw(ctx context.Context, userID int64, amount f
 		return nil, err
 	}
 
-	defer tx.Rollback(ctxTimeout)
+	defer func() {
+		if rbErr := tx.Rollback(ctxTimeout); rbErr != nil {
+			err = errors.Join(err, rbErr)
+		}
+	}()
 
 	n := pgtype.Numeric{}
 	_ = n.ScanScientific(strconv.FormatFloat(float64(amount), 'f', -1, 64))
-	result, err := r.tryAddDeltaWithTx(ctx, tx, userID, n)
+	result, err = r.tryAddDeltaWithTx(ctx, tx, userID, n)
 
 	if err != nil {
 		return nil, err
@@ -126,8 +134,8 @@ func (r *BalanceRepository) Withdraw(ctx context.Context, userID int64, amount f
 		return nil, err
 	}
 
-	if err := tx.Commit(ctxTimeout); err != nil {
-		return nil, err
+	if commitErr := tx.Commit(ctxTimeout); commitErr != nil {
+		return nil, commitErr
 	}
 
 	return result, nil

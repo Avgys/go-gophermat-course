@@ -30,7 +30,7 @@ func WithCompression(h http.Handler) http.Handler {
 			return
 		}
 
-		defer encodeWriter.Close()
+		defer func() { _ = encodeWriter.Close() }()
 
 		w = encodeWriter
 

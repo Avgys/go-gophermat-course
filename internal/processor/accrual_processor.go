@@ -62,7 +62,7 @@ func (p *AcrrualProcessor) startScan(ctx context.Context) chan int64 {
 
 	resultCh := make(chan int64, p.workersLimit)
 
-	go func() error {
+	go func() {
 		const interval = time.Second
 		t := time.NewTicker(interval)
 		defer t.Stop()
@@ -70,7 +70,7 @@ func (p *AcrrualProcessor) startScan(ctx context.Context) chan int64 {
 		for {
 			select {
 			case <-ctx.Done():
-				return nil
+				return
 			case <-t.C:
 
 				procCount := len(p.currentlyProcessing)
@@ -105,7 +105,7 @@ func (p *AcrrualProcessor) startScan(ctx context.Context) chan int64 {
 				for order := range p.currentlyProcessing {
 					select {
 					case <-ctx.Done():
-						return nil
+						return
 					case resultCh <- order:
 					}
 				}
@@ -124,7 +124,7 @@ func (p *AcrrualProcessor) InitPolling(done context.Context) {
 	p.StoreResult(done, processedCh)
 
 	//Start job pool
-	go p.pool.Run(done)
+	go func() { _ = p.pool.Run(done) }()
 }
 
 func (p *AcrrualProcessor) StoreResult(done context.Context, processedCh chan AccrualResult) {
@@ -163,22 +163,25 @@ func (p *AcrrualProcessor) StoreResult(done context.Context, processedCh chan Ac
 func storeAccrualResponse(done context.Context, p *AcrrualProcessor, accrualRs *responses.AccrualOrder) {
 	storeLimit := time.Second * 10
 	ctxTimeout, cancel := context.WithTimeout(done, storeLimit)
+	defer cancel()
 
-	p.orderService.UpdateOrderStatus(ctxTimeout, accrualRs)
-	cancel()
+	if err := p.orderService.UpdateOrderStatus(ctxTimeout, accrualRs); err != nil {
+		p.logger.Err(err).Msg("update order status from accrual")
+	}
 }
 
 func (p *AcrrualProcessor) startPolling(done context.Context, orderCh chan int64) chan AccrualResult {
 	resultCh := make(chan AccrualResult, p.workersLimit)
 
-	go func() error {
-
+	go func() {
 		for {
 			select {
 			case <-done.Done():
-				return nil
+				return
 			case orderNum := <-orderCh:
-				p.pool.Enqueue(done, func(c context.Context) { p.PollOrder(c, resultCh, orderNum) })
+				if err := p.pool.Enqueue(done, func(c context.Context) { p.PollOrder(c, resultCh, orderNum) }); err != nil {
+					p.logger.Err(err).Msg("enqueue accrual poll job")
+				}
 			}
 		}
 	}()
