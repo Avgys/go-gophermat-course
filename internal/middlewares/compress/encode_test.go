@@ -99,7 +99,11 @@ func TestNewCompressWriter_Gzip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("gzip.NewReader error: %v", err)
 	}
-	defer gzr.Close()
+	defer func() {
+		if err := gzr.Close(); err != nil {
+			t.Errorf("gzr.Close: %v", err)
+		}
+	}()
 
 	decompressed, err := io.ReadAll(gzr)
 	if err != nil {

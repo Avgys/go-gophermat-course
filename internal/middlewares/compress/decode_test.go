@@ -72,7 +72,11 @@ func TestNewCompressReader_Gzip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewCompressReader error: %v", err)
 	}
-	defer reader.Close()
+	defer func() {
+		if err := reader.Close(); err != nil {
+			t.Errorf("reader.Close: %v", err)
+		}
+	}()
 
 	decompressed, err := io.ReadAll(reader)
 	if err != nil {
@@ -97,7 +101,11 @@ func TestNewCompressReader_UnsupportedContentType(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewCompressReader error: %v", err)
 	}
-	defer reader.Close()
+	defer func() {
+		if err := reader.Close(); err != nil {
+			t.Errorf("reader.Close: %v", err)
+		}
+	}()
 
 	data, err := io.ReadAll(reader)
 	if err != nil {
@@ -122,7 +130,11 @@ func TestNewCompressReader_GzipEmptyBody(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewCompressReader error: %v", err)
 	}
-	defer reader.Close()
+	defer func() {
+		if err := reader.Close(); err != nil {
+			t.Errorf("reader.Close: %v", err)
+		}
+	}()
 
 	data, err := io.ReadAll(reader)
 	if err != nil {
