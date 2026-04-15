@@ -13,7 +13,7 @@ func TestNewPoolThresholds(t *testing.T) {
 	p := NewPool(2, 8, 20)
 	require.Equal(t, 2, p.min)
 	require.Equal(t, 8, p.max)
-	require.Equal(t, 15, p.upAt)   // 20 * 3 / 4
+	require.Equal(t, 10, p.upAt)  // 20 * 1 / 2
 	require.Equal(t, 2, p.downAt) // 20 / 10
 	require.NotNil(t, p.inputCh)
 }
@@ -145,7 +145,6 @@ func TestScaleUpPastUpAt(t *testing.T) {
 
 	// len(inputCh) > upAt (18), next tick should add workers
 	time.Sleep(250 * time.Millisecond)
-
 	p.mu.Lock()
 	nWorkers := len(p.stops)
 	p.mu.Unlock()

@@ -28,7 +28,7 @@ func NewPool(min, max, queueSize int) *Pool {
 		inputCh: make(chan Job, queueSize),
 		min:     min,
 		max:     max,
-		upAt:    queueSize * 3 / 4,
+		upAt:    queueSize * 2 / 4,
 		downAt:  queueSize / 10,
 	}
 }
