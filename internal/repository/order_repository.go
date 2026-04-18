@@ -67,7 +67,9 @@ func (r *OrderRepository) UpdateOrderAndIncreaseBalance(ctx context.Context, arg
 		}
 	}()
 
-	row, err := r.orderRepository.UpdateOrder(ctxTimeout, *arg)
+	ordersQueries := r.orderRepository.WithTx(tx)
+
+	row, err := ordersQueries.UpdateOrder(ctxTimeout, *arg)
 
 	if err != nil {
 		return err

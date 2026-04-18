@@ -38,12 +38,16 @@ func NewDB(ctx context.Context, cfg *Config) (*DB, error) {
 
 	pool, err := initPool(initCtx, cfg)
 
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize a connection pool: %w", err)
+	}
+
 	if err := runMigrations(initCtx, cfg); err != nil {
 		return nil, err
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize a connection pool: %w", err)
+		return nil, fmt.Errorf("failed to run migrations: %w", err)
 	}
 
 	go func() {

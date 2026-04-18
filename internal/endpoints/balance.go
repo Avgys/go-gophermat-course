@@ -11,7 +11,7 @@ import (
 
 func (e *Endpoints) GetBalanceByUserID(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	traceLogger := logger.Endpoint(ctx, "GetBalanceByUserId")
+	traceLogger := logger.FromContext(ctx)
 
 	userClaims, err := auth.GetFromContext(ctx)
 	if httphelper.HandleErr(w, r, err, traceLogger) {
@@ -34,7 +34,7 @@ func (e *Endpoints) GetBalanceByUserID(w http.ResponseWriter, r *http.Request) {
 
 func (e *Endpoints) Withdraw(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	traceLogger := logger.Endpoint(ctx, "Withdraw")
+	traceLogger := logger.FromContext(ctx)
 
 	userClaims, err := auth.GetFromContext(ctx)
 	if httphelper.HandleErr(w, r, err, traceLogger) {
@@ -43,7 +43,7 @@ func (e *Endpoints) Withdraw(w http.ResponseWriter, r *http.Request) {
 
 	var withdraw requests.WithdrawRq
 
-	err = getJSONBody(r, &withdraw)
+	err = httphelper.GetJSONBody(r, &withdraw)
 	if httphelper.HandleErr(w, r, err, traceLogger) {
 		return
 	}
@@ -64,7 +64,7 @@ func (e *Endpoints) Withdraw(w http.ResponseWriter, r *http.Request) {
 
 func (e *Endpoints) GetWithdrawals(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	traceLogger := logger.Endpoint(ctx, "Withdraw")
+	traceLogger := logger.FromContext(ctx)
 
 	userClaims, err := auth.GetFromContext(ctx)
 	if httphelper.HandleErr(w, r, err, traceLogger) {

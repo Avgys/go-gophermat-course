@@ -23,7 +23,7 @@ const (
 
 func main() {
 
-	log, closeLogger := logger.NewLogger()
+	log, closeLogger, _ := logger.NewLogger()
 	defer closeLogger()
 
 	if err := run(log); err != nil {

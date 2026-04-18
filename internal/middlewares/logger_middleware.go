@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"avgys-gophermat/internal/logger"
+	"fmt"
 	"math/rand"
 	"net/http"
 	"time"
@@ -27,7 +28,14 @@ func WithLogging(h http.Handler) http.Handler {
 
 		spanID := rand.Int63()
 		reqCtx := r.Context()
-		log, close := logger.NewRequestLogger(reqCtx, spanID)
+		log, close, err := logger.NewRequestLogger(reqCtx, spanID)
+
+		if err != nil {
+			fmt.Print("couldn't create request logger")
+
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
 
 		defer close()
 

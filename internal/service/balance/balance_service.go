@@ -67,7 +67,7 @@ func (b *BalanceService) GetWithdrawals(ctx context.Context, userClaims *auth.To
 
 func (b *BalanceService) Withdraw(ctx context.Context, userClaims *auth.TokenClaims, withdraw *requests.WithdrawRq) (*responses.WithdrawDeltaRs, error) {
 
-	if withdraw.Sum < 0 {
+	if withdraw.Sum <= 0 {
 		return nil, httphelper.NewError("withdraw amount must be more than 0", http.StatusBadRequest)
 	}
 

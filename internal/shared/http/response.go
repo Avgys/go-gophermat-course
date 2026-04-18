@@ -74,7 +74,7 @@ func logRequest(r *http.Request, err error, tracelog *zerolog.Logger) {
 		tracelog.Error().
 			Err(err).
 			RawJSON("Request", reqJSON).
-			Msg("error proccessing request")
+			Msg("error processing request")
 	} else {
 		tracelog.
 			Error().

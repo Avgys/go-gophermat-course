@@ -83,18 +83,7 @@ func (p *AcrrualProcessor) startScan(ctx context.Context) chan int64 {
 					continue
 				}
 
-				p.mu.RLock()
-
-				var newOrders []orderrepository.Order
-				for _, o := range orders {
-					if _, ok := p.currentlyProcessing[o.OrderNum]; !ok {
-						newOrders = append(newOrders, o)
-					}
-				}
-
-				p.mu.RUnlock()
-
-				p.MarkProcessing(newOrders)
+				p.MarkProcessing(orders)
 
 				sleepTime := p.GetSleepTime()
 
