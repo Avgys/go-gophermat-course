@@ -10,14 +10,14 @@ import (
 
 func (e *Endpoints) LoadOrder(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	traceLogger := logger.Endpoint(ctx, "LoadOrder")
+	traceLogger := logger.FromContext(ctx)
 
 	userClaims, err := auth.GetFromContext(ctx)
 	if httphelper.HandleErr(w, r, err, traceLogger) {
 		return
 	}
 
-	body, err := getBody(w, r)
+	body, err := httphelper.GetRequestBody(w, r)
 	if httphelper.HandleErr(w, r, err, traceLogger) {
 		return
 	}
@@ -34,7 +34,7 @@ func (e *Endpoints) LoadOrder(w http.ResponseWriter, r *http.Request) {
 
 func (e *Endpoints) GetOrdersByUserId(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	traceLogger := logger.Endpoint(ctx, "GetOrdersByUserId")
+	traceLogger := logger.FromContext(ctx)
 
 	userClaims, err := auth.GetFromContext(ctx)
 	if httphelper.HandleErr(w, r, err, traceLogger) {

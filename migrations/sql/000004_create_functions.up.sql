@@ -16,14 +16,13 @@ BEGIN
     SELECT b.amount
     INTO old_amount
     FROM public.balance b
-    WHERE b.user_id = p_user_id;
+    WHERE b.user_id = p_user_id
+    FOR UPDATE;
 
     new_amount := old_amount;
 
     -- Try update
     IF old_amount + p_delta < 0 THEN
-        
-        
         RAISE EXCEPTION 'insufficient funds: balance % + delta % would be negative', old_amount, p_delta
             USING ERRCODE = '22003';
     END IF;

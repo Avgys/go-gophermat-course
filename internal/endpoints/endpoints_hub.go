@@ -1,9 +1,9 @@
 package endpoints
 
 type Endpoints struct {
-	AuthService
-	OrderService
-	BalanceService
+	AuthService    AuthService
+	OrderService   OrderService
+	BalanceService BalanceService
 }
 
 func New(authservice AuthService, orderService OrderService, balanceService BalanceService) *Endpoints {

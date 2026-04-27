@@ -1,6 +1,5 @@
 # Binaries for programs and plugins
-*.exe
-*.exe~
+gophermarttest.exe
 *.dll
 *.so
 *.dylib
@@ -13,7 +12,6 @@
 *.log
 
 # Binaries
-cmd/gophermart/main
 cmd/gophermart/gophermart
 
 # Dependency directories (remove the comment below to include it)

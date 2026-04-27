@@ -5,6 +5,7 @@ import (
 	"avgys-gophermat/internal/model/order"
 	orderrepository "avgys-gophermat/sqlc/order"
 	"context"
+	"errors"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -51,7 +52,7 @@ func (r *OrderRepository) GetUnproccessedOrders(ctx context.Context, limit int32
 	return r.orderRepository.GetUnproccessedOrders(ctxTimeout, limit)
 }
 
-func (r *OrderRepository) UpdateOrderAndIncreaseBalance(ctx context.Context, arg *orderrepository.UpdateOrderParams) error {
+func (r *OrderRepository) UpdateOrderAndIncreaseBalance(ctx context.Context, arg *orderrepository.UpdateOrderParams) (err error) {
 	ctxTimeout, cancel := context.WithTimeout(ctx, operationTimeout)
 	defer cancel()
 
@@ -60,24 +61,30 @@ func (r *OrderRepository) UpdateOrderAndIncreaseBalance(ctx context.Context, arg
 		return err
 	}
 
-	defer tx.Rollback(ctx)
+	defer func() {
+		if rbErr := tx.Rollback(ctx); rbErr != nil && !errors.Is(rbErr, pgx.ErrTxClosed) {
+			err = errors.Join(err, rbErr)
+		}
+	}()
 
-	row, err := r.orderRepository.UpdateOrder(ctxTimeout, *arg)
+	ordersQueries := r.orderRepository.WithTx(tx)
+
+	row, err := ordersQueries.UpdateOrder(ctxTimeout, *arg)
 
 	if err != nil {
 		return err
 	}
 
 	if row.Status == int32(order.StatusProcessed) {
-		_, err := r.balanceRepository.tryAddDeltaWithTx(ctx, tx, row.UserID, row.Accrual)
+		_, err = r.balanceRepository.tryAddDeltaWithTx(ctx, tx, row.UserID, row.Accrual)
 
 		if err != nil {
 			return err
 		}
 	}
 
-	if err := tx.Commit(ctxTimeout); err != nil {
-		return err
+	if commitErr := tx.Commit(ctxTimeout); commitErr != nil && !errors.Is(commitErr, pgx.ErrTxClosed) {
+		return commitErr
 	}
 
 	return nil

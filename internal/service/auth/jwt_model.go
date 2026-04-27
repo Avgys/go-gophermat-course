@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -52,8 +53,12 @@ func ParseToken(tokenString string) (*TokenClaims, error) {
 
 	token, err := jwt.ParseWithClaims(tokenString, claims, verifyToken)
 
-	if err != nil || !token.Valid {
+	if err != nil {
 		return nil, err
+	}
+
+	if !token.Valid {
+		return nil, errors.New("auth token is invalid")
 	}
 
 	return claims, nil

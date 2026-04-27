@@ -5,9 +5,11 @@ import (
 	"avgys-gophermat/internal/model/requests"
 	"avgys-gophermat/internal/repository"
 	"avgys-gophermat/internal/service/generator"
+	httphelper "avgys-gophermat/internal/shared/http"
 	"context"
 	"encoding/hex"
 	"errors"
+	"net/http"
 )
 
 type AuthService struct {
@@ -17,11 +19,6 @@ type AuthService struct {
 func NewAuthService(resository *repository.AuthRepository) *AuthService {
 	return &AuthService{resository}
 }
-
-var (
-	ErrUnauthorized      = errors.New("unauthorized")
-	ErrUserAlreadyExists = errors.New("user already exists")
-)
 
 func (a *AuthService) Register(ctx context.Context, user *requests.UserRq) (*TokenClaims, error) {
 
@@ -38,7 +35,7 @@ func (a *AuthService) Register(ctx context.Context, user *requests.UserRq) (*Tok
 
 	if err != nil {
 		if errors.Is(err, repository.ErrUserAlreadyExists) {
-			return nil, ErrUserAlreadyExists
+			return nil, httphelper.NewError(err.Error(), http.StatusConflict)
 		}
 
 		return nil, err
@@ -52,7 +49,7 @@ func (a *AuthService) Login(ctx context.Context, user *requests.UserRq) (*TokenC
 
 	if err != nil {
 		if errors.Is(err, repository.ErrUserNotFound) {
-			return nil, ErrUnauthorized
+			return nil, httphelper.NewError(http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 		}
 
 		return nil, err
@@ -63,7 +60,7 @@ func (a *AuthService) Login(ctx context.Context, user *requests.UserRq) (*TokenC
 	loginHash, _ := generator.GetHashWithSalt(user.Password, salt)
 
 	if dbUser.PasswordHash != loginHash {
-		return nil, ErrUnauthorized
+		return nil, httphelper.NewError(http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 	}
 
 	return NewToken(dbUser.ID, dbUser.Login), nil

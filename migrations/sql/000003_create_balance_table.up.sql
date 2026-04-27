@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS balance (
     amount decimal (12, 6) NOT NULL DEFAULT 0,
     withdrawn decimal (12, 6) NOT NULL DEFAULT 0,
     user_id BIGINT NOT NULL UNIQUE,
-    CONSTRAINT orders_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id)
+    CONSTRAINT balance_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 CREATE TABLE IF NOT EXISTS withdraw_history (
@@ -12,5 +12,5 @@ CREATE TABLE IF NOT EXISTS withdraw_history (
     withdraw_amount decimal (12, 6) NOT NULL,
     user_id BIGINT NOT NULL,    
     created_at TIMESTAMP NOT NULL DEFAULT now(),
-    CONSTRAINT orders_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id)
+    CONSTRAINT withdraw_history_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id)
 );

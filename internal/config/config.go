@@ -17,16 +17,16 @@ type Config struct {
 func GetConfig(args []string, traceLogger *zerolog.Logger) (*Config, error) {
 	cfg := &Config{}
 
-	err := parseFlags(cfg, args)
-
-	if err != nil {
-		return nil, fmt.Errorf("error parsing flags for config, %w", err)
-	}
-
-	err = parseEnv(cfg)
+	err := parseEnv(cfg)
 
 	if err != nil {
 		return nil, fmt.Errorf("error parsing env variables for config, %w", err)
+	}
+
+	err = parseFlags(cfg, args)
+
+	if err != nil {
+		return nil, fmt.Errorf("error parsing flags for config, %w", err)
 	}
 
 	traceLogger.Info().
@@ -47,9 +47,25 @@ func parseEnv(cfg *Config) error {
 func parseFlags(cfg *Config, args []string) error {
 	fs := flag.NewFlagSet("shortener", flag.ContinueOnError)
 
-	fs.StringVar(&cfg.AppAddr, "a", "", "address of HTTP server")
-	fs.StringVar(&cfg.DBConnectionString, "d", "", "db connection string url")
-	fs.StringVar(&cfg.AccrualSystemAddr, "r", "", "accrual system address")
+	flagCfg := &Config{}
 
-	return fs.Parse(args)
+	fs.StringVar(&flagCfg.AppAddr, "a", "", "address of HTTP server")
+	fs.StringVar(&flagCfg.DBConnectionString, "d", "", "db connection string url")
+	fs.StringVar(&flagCfg.AccrualSystemAddr, "r", "", "accrual system address")
+
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	if flagCfg.AppAddr != "" {
+		cfg.AppAddr = flagCfg.AppAddr
+	}
+	if flagCfg.DBConnectionString != "" {
+		cfg.DBConnectionString = flagCfg.DBConnectionString
+	}
+	if flagCfg.AccrualSystemAddr != "" {
+		cfg.AccrualSystemAddr = flagCfg.AccrualSystemAddr
+	}
+
+	return nil
 }

@@ -8,15 +8,13 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-const textType = "text/plain"
-const xgzipType = "application/x-gzip"
 const jsonType = "application/json"
 
 func NewRouter(h *endpoints.Endpoints) *chi.Mux {
 
 	r := chi.NewRouter()
 
-	r.Use(middleware.RealIP, middlewares.WithLogging, middlewares.WithCompression)
+	r.Use(middlewares.WithLogging, middleware.Recoverer, middleware.RealIP, middlewares.WithCompression)
 
 	r.Route("/api/user", func(r chi.Router) {
 		r.Group(func(r chi.Router) {

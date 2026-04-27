@@ -17,7 +17,9 @@ func WriteResponse(w http.ResponseWriter, resp []byte, code int, tracelog *zerol
 	tracelog.Info().Int("status code", code).Str("response", string(resp)).Msg("write response")
 
 	if len(resp) > 0 {
-		w.Write(resp)
+		if _, err := w.Write(resp); err != nil {
+			tracelog.Err(err).Msg("write response body")
+		}
 	}
 }
 
@@ -72,7 +74,7 @@ func logRequest(r *http.Request, err error, tracelog *zerolog.Logger) {
 		tracelog.Error().
 			Err(err).
 			RawJSON("Request", reqJSON).
-			Msg("error proccessing request")
+			Msg("error processing request")
 	} else {
 		tracelog.
 			Error().

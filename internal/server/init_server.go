@@ -13,6 +13,7 @@ import (
 	"avgys-gophermat/internal/service/orders"
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 
@@ -45,8 +46,22 @@ func GetServer(done context.Context, traceLogger *zerolog.Logger) (*http.Server,
 
 func prepareDI(done context.Context, cfg *config.Config, traceLogger *zerolog.Logger) (*endpoints.Endpoints, error) {
 
+	closers := make([]io.Closer, 0)
+
 	//Db
 	dbConnection, err := db.NewDB(done, &db.Config{ConnectionString: cfg.DBConnectionString})
+
+	closers = append(closers, dbConnection)
+
+	go func() {
+		<-done.Done()
+
+		for i := len(closers) - 1; i >= 0; i-- {
+			if err := closers[i].Close(); err != nil {
+				traceLogger.Err(err).Str("message", "error when closing services")
+			}
+		}
+	}()
 
 	if err != nil {
 		err = fmt.Errorf("error initializing db: %w", err)
@@ -60,12 +75,17 @@ func prepareDI(done context.Context, cfg *config.Config, traceLogger *zerolog.Lo
 
 	// Services
 	authService := auth.NewAuthService(authRepo)
+
 	accrualService := accrualclient.NewAccrualService(done, cfg)
+	closers = append(closers, dbConnection)
+
 	orderService := orders.NewOrderService(orderRepo, accrualService)
 	balanceService := balance.NewBalanceService(balanceRepo)
 
 	//Background processors
-	processor.NewAcrrualProcessor(done, orderService, accrualService, traceLogger)
+	proc := processor.NewAcrrualProcessor(done, orderService, accrualService, traceLogger)
+	proc.InitPolling(done)
+	closers = append(closers, proc)
 
 	h := endpoints.New(authService, orderService, balanceService)
 
