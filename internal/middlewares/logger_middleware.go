@@ -37,12 +37,21 @@ func WithLogging(h http.Handler) http.Handler {
 			return
 		}
 
-		defer close()
+		defer func() { _ = close() }()
 
 		reqCtx = log.WithContext(reqCtx)
 		r = r.WithContext(reqCtx)
 
-		log = logger.Middleware(r.Context(), "WithLogging")
+		log, close, err = logger.Middleware(r.Context(), "WithLogging")
+
+		if err != nil {
+			fmt.Print("couldn't create request logger")
+
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		defer func() { _ = close() }()
 
 		log.Info().
 			Str("Path", r.RequestURI).

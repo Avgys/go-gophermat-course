@@ -34,6 +34,8 @@ type AcrrualProcessor struct {
 	mu sync.RWMutex
 
 	accrualPoolSleepTime atomic.Int64
+
+	closeCh chan struct{}
 }
 
 func NewAcrrualProcessor(done context.Context, orderService OrderService, accrualService accrualclient.AccrualClient, traceLogger *zerolog.Logger) *AcrrualProcessor {
@@ -46,14 +48,13 @@ func NewAcrrualProcessor(done context.Context, orderService OrderService, accrua
 		orderService:   orderService,
 		accrualService: accrualService,
 		logger:         &log,
+		closeCh:        make(chan struct{}),
 	}
 
 	p.accrualPoolSleepTime.Store(0)
 	p.currentlyProcessing = make(map[int64]struct{})
 
 	p.pool = NewPool(p.workersLimit/4, p.workersLimit, p.workersLimit)
-
-	p.InitPolling(done)
 
 	return p
 }
@@ -70,6 +71,8 @@ func (p *AcrrualProcessor) startScan(ctx context.Context) chan int64 {
 		for {
 			select {
 			case <-ctx.Done():
+				return
+			case <-p.closeCh:
 				return
 			case <-t.C:
 
@@ -94,6 +97,8 @@ func (p *AcrrualProcessor) startScan(ctx context.Context) chan int64 {
 				for order := range p.currentlyProcessing {
 					select {
 					case <-ctx.Done():
+						return
+					case <-p.closeCh:
 						return
 					case resultCh <- order:
 					}
@@ -123,6 +128,8 @@ func (p *AcrrualProcessor) StoreResult(done context.Context, processedCh chan Ac
 		for {
 			select {
 			case <-done.Done():
+				return
+			case <-p.closeCh:
 				return
 			case accrualRs := <-processedCh:
 				if accrualRs.err != nil {
@@ -166,6 +173,8 @@ func (p *AcrrualProcessor) startPolling(done context.Context, orderCh chan int64
 		for {
 			select {
 			case <-done.Done():
+				return
+			case <-p.closeCh:
 				return
 			case orderNum := <-orderCh:
 				if err := p.pool.Enqueue(done, func(c context.Context) { p.PollOrder(c, resultCh, orderNum) }); err != nil {
@@ -218,4 +227,9 @@ func (p *AcrrualProcessor) UnmarkProcessing(processed ...int64) {
 
 func (p *AcrrualProcessor) GetSleepTime() time.Duration {
 	return time.Second * time.Duration(p.accrualPoolSleepTime.Load())
+}
+
+func (p *AcrrualProcessor) Close() error {
+	close(p.closeCh)
+	return nil
 }

@@ -4,7 +4,6 @@ import (
 	"avgys-gophermat/internal/logger"
 	"avgys-gophermat/internal/service/auth"
 	httphelper "avgys-gophermat/internal/shared/http"
-	shared "avgys-gophermat/internal/shared/http"
 	"encoding/json"
 	"net/http"
 )
@@ -18,7 +17,7 @@ func (e *Endpoints) LoadOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	body, err := shared.GetRequestBody(w, r)
+	body, err := httphelper.GetRequestBody(w, r)
 	if httphelper.HandleErr(w, r, err, traceLogger) {
 		return
 	}

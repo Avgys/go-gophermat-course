@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"fmt"
 	"net/http"
 
 	"avgys-gophermat/internal/logger"
@@ -9,8 +10,16 @@ import (
 
 func RequireCookie(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		traceLogger, close, err := logger.Middleware(r.Context(), "compress")
 
-		traceLogger := logger.Middleware(r.Context(), "RequireCookie")
+		if err != nil {
+			fmt.Print("couldn't create request logger")
+
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		defer func() { _ = close() }()
 
 		authCookie, err := r.Cookie(string(auth.CookieName))
 

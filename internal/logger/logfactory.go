@@ -10,8 +10,9 @@ import (
 )
 
 var funcNameTag string = "func_name_tag"
+var defaultFuncNameDepth = 2
 
-func NewLogger() (*zerolog.Logger, func(), error) {
+func newBaseLogger() (*zerolog.Logger, func() error, error) {
 
 	f, err := os.OpenFile("app.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
 
@@ -19,28 +20,24 @@ func NewLogger() (*zerolog.Logger, func(), error) {
 		return nil, nil, err
 	}
 
-	funcName := callerFuncName()
-
 	logger := zerolog.
 		New(io.MultiWriter(os.Stderr, f)).
 		With().
-		Str(funcNameTag, funcName).
 		Timestamp().
 		Logger()
 
-	return &logger, func() { f.Close() }, nil
+	return &logger, f.Close, nil
 }
 
-func NewRequestLogger(ctx context.Context, spanID int64) (*zerolog.Logger, func(), error) {
+func NewRequestLogger(ctx context.Context, spanID int64) (*zerolog.Logger, func() error, error) {
 
-	log, close, err := NewLogger()
+	log, close, err := newBaseLogger()
 
 	if err != nil {
 		return nil, nil, err
 	}
 
 	wrappedLog := log.With().
-		Timestamp().
 		Ctx(ctx).
 		Int64("spanID", spanID).
 		Stack().
@@ -50,19 +47,27 @@ func NewRequestLogger(ctx context.Context, spanID int64) (*zerolog.Logger, func(
 }
 
 func FromContext(ctx context.Context) *zerolog.Logger {
-	funcName := callerFuncName()
+	funcName := callerFuncName(defaultFuncNameDepth)
 
-	log := FromContext(ctx).With().Str(funcNameTag, funcName).Logger()
-	return &log
+	logWithFnName := zerolog.Ctx(ctx).With().Str(funcNameTag, funcName).Logger()
+	return &logWithFnName
 }
 
-func Middleware(ctx context.Context, name string) *zerolog.Logger {
-	log := zerolog.Ctx(ctx).With().Str("middleware", name).Logger()
-	return &log
+func Middleware(ctx context.Context, name string) (*zerolog.Logger, func() error, error) {
+
+	log, close, err := newBaseLogger()
+
+	if err != nil {
+		return nil, nil, err
+	}
+
+	wrappedLog := log.With().Str("middleware", name).Logger()
+
+	return &wrappedLog, close, nil
 }
 
-func callerFuncName() string {
-	pc, _, _, ok := runtime.Caller(2)
+func callerFuncName(callLevel int) string {
+	pc, _, _, ok := runtime.Caller(callLevel)
 	if !ok {
 		return "?"
 	}

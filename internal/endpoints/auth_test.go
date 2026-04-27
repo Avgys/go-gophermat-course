@@ -5,6 +5,7 @@ import (
 	"avgys-gophermat/internal/endpoints/tests/mocks"
 	"avgys-gophermat/internal/model/requests"
 	"avgys-gophermat/internal/service/auth"
+	httphelper "avgys-gophermat/internal/shared/http"
 	"bytes"
 	"context"
 	"errors"
@@ -70,7 +71,7 @@ func (s *authSuite) TestRegisterBadJSON() {
 func (s *authSuite) TestRegisterConflict() {
 	s.authMock.EXPECT().
 		Register(gomock.Any(), gomock.AssignableToTypeOf(&requests.UserRq{})).
-		Return(nil, auth.ErrUserAlreadyExists)
+		Return(nil, httphelper.NewError("user already exists", http.StatusConflict))
 
 	reqBody := []byte(`{"login":"alice","password":"secret"}`)
 	req := httptest.NewRequest(http.MethodPost, "/api/user/register", bytes.NewReader(reqBody))
@@ -130,7 +131,7 @@ func (s *authSuite) TestLoginBadJSON() {
 func (s *authSuite) TestLoginUnauthorized() {
 	s.authMock.EXPECT().
 		Login(gomock.Any(), gomock.AssignableToTypeOf(&requests.UserRq{})).
-		Return(nil, auth.ErrUnauthorized)
+		Return(nil, httphelper.NewError("user not found", http.StatusUnauthorized))
 
 	reqBody := []byte(`{"login":"alice","password":"secret"}`)
 	req := httptest.NewRequest(http.MethodPost, "/api/user/login", bytes.NewReader(reqBody))

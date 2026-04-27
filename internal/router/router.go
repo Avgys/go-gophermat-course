@@ -14,7 +14,7 @@ func NewRouter(h *endpoints.Endpoints) *chi.Mux {
 
 	r := chi.NewRouter()
 
-	r.Use(middleware.RealIP, middlewares.WithLogging, middlewares.WithCompression)
+	r.Use(middlewares.WithLogging, middleware.Recoverer, middleware.RealIP, middlewares.WithCompression)
 
 	r.Route("/api/user", func(r chi.Router) {
 		r.Group(func(r chi.Router) {

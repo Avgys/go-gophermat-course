@@ -40,13 +40,6 @@ func NewAccrualService(ctx context.Context, cfg *config.Config) *AccrualService 
 		accrualSystemAddr: accrualAddr,
 	}
 
-	if ctx != nil {
-		go func() {
-			<-ctx.Done()
-			_ = client.Close()
-		}()
-	}
-
 	return service
 }
 
@@ -99,4 +92,8 @@ func (s *AccrualService) Send(ctx context.Context, orderNum string, logger *zero
 	err = fmt.Errorf("unsupported error %s", resp.Status())
 	logger.Error().Err(err).Str("order", orderNum).Msg("unexpected accrual server response")
 	return nil, err
+}
+
+func (s *AccrualService) Close() error {
+	return s.restClient.Close()
 }

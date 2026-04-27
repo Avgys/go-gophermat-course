@@ -43,18 +43,14 @@ func NewDB(ctx context.Context, cfg *Config) (*DB, error) {
 	}
 
 	if err := runMigrations(initCtx, cfg); err != nil {
-		return nil, err
-	}
-
-	if err != nil {
 		return nil, fmt.Errorf("failed to run migrations: %w", err)
 	}
 
-	go func() {
-		<-ctx.Done()
+	// go func() {
+	// 	<-ctx.Done()
 
-		pool.Close()
-	}()
+	// 	pool.Close()
+	// }()
 
 	return &DB{Pool: pool}, nil
 }
@@ -103,6 +99,7 @@ func (db *DB) Ping(ctx context.Context) error {
 	return db.Pool.Ping(ctx)
 }
 
-func (db *DB) Close() {
+func (db *DB) Close() error {
 	db.Pool.Close()
+	return nil
 }

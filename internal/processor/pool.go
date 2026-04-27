@@ -140,3 +140,8 @@ func (p *Pool) stopAll() {
 
 	p.stops = nil
 }
+
+func (p *Pool) Close() error {
+	p.stopAll()
+	return nil
+}

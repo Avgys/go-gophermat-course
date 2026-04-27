@@ -3,6 +3,7 @@ package middlewares
 import (
 	"avgys-gophermat/internal/logger"
 	"avgys-gophermat/internal/middlewares/compress"
+	"fmt"
 	"net/http"
 
 	httpShared "avgys-gophermat/internal/shared/http"
@@ -12,7 +13,16 @@ func WithCompression(h http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		traceLogger := logger.Middleware(r.Context(), "compress")
+		traceLogger, close, err := logger.Middleware(r.Context(), "compress")
+
+		if err != nil {
+			fmt.Print("couldn't create request logger")
+
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		defer func() { _ = close() }()
 
 		decodeReader, err := compress.NewCompressReader(r)
 

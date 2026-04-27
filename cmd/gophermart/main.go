@@ -23,8 +23,13 @@ const (
 
 func main() {
 
-	log, closeLogger, _ := logger.NewLogger()
-	defer closeLogger()
+	log, closeLogger, err := logger.NewRequestLogger(context.Background(), 0)
+
+	if err != nil {
+		panic("couldn't create logger")
+	}
+
+	defer func() { _ = closeLogger() }()
 
 	if err := run(log); err != nil {
 		log.Fatal().Err(err).Send()
